@@ -1,268 +1,112 @@
 <div align="center">
 
-# browser.autos
-
 <img src="./assets/logo_github.png" alt="browser.autos logo" width="100%">
 
-<h3>Production-ready browser automation API powered by Playwright Chromium</h3>
+# Cloud-Native Headless Browser Platform
+
+**Write code. Run anywhere. Scrape everything.**
+
+[![Docker](https://img.shields.io/badge/docker-browserautos%2Fbrowser--autos-blue?logo=docker)](https://hub.docker.com/r/browserautos/browser-autos)
+[![Stars](https://img.shields.io/github/stars/browser-autos/browser-autos?style=social)](https://github.com/browser-autos/browser-autos)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
+[🌐 Website](https://browser.autos) | [📘 Docs](./backend/README.md) | [🐳 Docker Hub](https://hub.docker.com/r/browserautos/browser-autos) | [🇨🇳 中文文档](./README_CN.md)
 
 </div>
 
-[![Docker Image](https://img.shields.io/badge/docker-browserautos%2Fbrowser--autos-blue?logo=docker)](https://hub.docker.com/r/browserautos/browser-autos)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](https://opensource.org/licenses/MIT)
-[![GitHub](https://img.shields.io/github/stars/browser-autos/browser-autos?style=social)](https://github.com/browser-autos/browser-autos)
+---
 
-[🇨🇳 中文文档](./README_CN.md) | [🐳 Docker Hub](https://hub.docker.com/r/browserautos/browser-autos)
+## 📁 Repository Structure
+
+```
+browser.autos/
+├── backend/          # API Server (Node.js + TypeScript + Fastify)
+│   ├── src/          # Source code
+│   ├── docker/       # Docker configurations
+│   ├── docs/         # API documentation
+│   └── tests/        # Test suites
+│
+├── frontend/         # Landing Page (Next.js + TypeScript)
+│   ├── app/          # Next.js app directory
+│   └── components/   # React components
+│
+└── assets/           # Shared assets (logos, images)
+```
 
 ---
 
-## 🚀 What is browser.autos?
-
-**browser.autos** is an enterprise-grade browser automation platform that provides:
-
-- **REST APIs** for screenshots, PDF generation, content extraction, and web scraping
-- **WebSocket CDP Proxy** for direct Puppeteer/Playwright integration
-- **Browser Pool** with automatic instance reuse for optimal performance
-- **Queue Management** with Redis-backed async task processing
-- **Authentication** via JWT tokens and API keys
-- **Monitoring** with built-in Prometheus metrics
-
-Perfect for CI/CD testing, report generation, web monitoring, data collection, and E2E testing.
-
----
-
-## 🐳 Quick Start
+## ⚡ Quick Start
 
 ### Using Docker (Recommended)
 
-**Option 1: Docker Hub**
-
 ```bash
-# Pull the latest image
-docker pull browserautos/browser-autos:latest
-
-# Run the container
-docker run -d \
-  --name browser-autos \
-  -p 3001:3001 \
-  -e JWT_SECRET=your-secret-key \
+docker run -d -p 3001:3001 \
+  -e JWT_SECRET=your-secret \
   --shm-size=2gb \
-  --memory=4g \
   browserautos/browser-autos:latest
-
-# Test the service
-curl http://localhost:3001/health
 ```
 
-**Option 2: GitHub Container Registry**
+### From Source
 
 ```bash
-# Pull from GHCR
-docker pull ghcr.io/browser-autos/browser-autos:latest
-
-# Run the container
-docker run -d \
-  --name browser-autos \
-  -p 3001:3001 \
-  -e JWT_SECRET=your-secret-key \
-  --shm-size=2gb \
-  --memory=4g \
-  ghcr.io/browser-autos/browser-autos:latest
-```
-
-### Local Development
-
-```bash
-# Clone the repository
-git clone git@github.com:browser-autos/browser-autos.git
-cd browser-autos
-
-# Install dependencies
+# Backend API
+cd backend
 npm install
-
-# Start Redis (required for queue)
-docker run -d -p 6379:6379 redis:7-alpine
-
-# Configure environment
-cp .env.example .env
-
-# Start development server
 npm run dev
 
-# API available at http://localhost:3001
+# Frontend Landing Page
+cd frontend
+npm install
+npm run dev
 ```
 
 ---
 
-## 📚 API Examples
+## 🎯 What is browser.autos?
 
-### Screenshot
+**browser.autos** is a cloud-native headless browser platform that provides:
 
-```bash
-curl -X POST http://localhost:3001/screenshot \
-  -H "Content-Type: application/json" \
-  -d '{"url": "https://example.com", "fullPage": true}' \
-  -o screenshot.png
-```
-
-### PDF Generation
-
-```bash
-curl -X POST http://localhost:3001/pdf \
-  -H "Content-Type: application/json" \
-  -d '{"url": "https://example.com", "format": "A4"}' \
-  -o document.pdf
-```
-
-### Web Scraping
-
-```bash
-curl -X POST http://localhost:3001/scrape \
-  -H "Content-Type: application/json" \
-  -d '{
-    "url": "https://example.com",
-    "elements": [
-      {"selector": "h1", "property": "textContent"},
-      {"selector": ".price", "property": "textContent"}
-    ]
-  }'
-```
+- **REST APIs** - Screenshots, PDFs, content extraction, web scraping
+- **WebSocket Proxy** - Full CDP protocol access for Puppeteer/Playwright
+- **Browser Pool** - 85% faster with automatic instance reuse
+- **Queue System** - Redis-backed async processing
+- **Multi-Arch** - AMD64 + ARM64 (Apple Silicon, AWS Graviton)
+- **Production Ready** - JWT auth, Prometheus metrics, health checks
 
 ---
 
-## ✨ Features
+## 🚀 Use Cases
 
-### Core Capabilities
-
-- **📸 Screenshot API** - Full page or element screenshots (PNG, JPEG, WebP)
-- **📄 PDF Generation** - Convert web pages to PDF with custom styling
-- **🔍 Content Extraction** - Extract HTML, text, and metadata
-- **🕷️ Web Scraping** - CSS selector-based data extraction
-- **🔌 WebSocket CDP Proxy** - Direct Puppeteer/Playwright integration
-- **⚡ Browser Pool** - 85% faster with automatic reuse
-- **🔒 Authentication** - JWT + API Key support
-- **📊 Monitoring** - Prometheus metrics built-in
-
-### Enterprise Features
-
-- **Multi-Architecture**: AMD64 and ARM64 support (Apple Silicon, AWS Graviton)
-- **Queue System**: Redis-backed async processing with priority and retry
-- **Session Management**: Auto-cleanup, timeout controls, lifecycle tracking
-- **API Documentation**: Interactive Swagger/OpenAPI docs at `/docs`
-- **Production Ready**: Non-root execution, health checks, resource limits
+- 📸 **Screenshot Service** - Visual regression testing, thumbnails
+- 📄 **PDF Generator** - Reports, invoices at scale
+- 🕷️ **Web Scraper** - Price monitoring, content aggregation
+- 🧪 **Testing Platform** - E2E tests, CI/CD integration
+- 👀 **Monitoring System** - Change detection, uptime checks
 
 ---
 
-## 🔌 Integration
+## 📚 Documentation
 
-### Puppeteer
-
-```javascript
-const puppeteer = require('puppeteer-core');
-
-const browser = await puppeteer.connect({
-  browserWSEndpoint: 'ws://localhost:3001/ws'
-});
-
-const page = await browser.newPage();
-await page.goto('https://example.com');
-await browser.close();
-```
-
-### Playwright
-
-```javascript
-const { chromium } = require('playwright');
-
-const browser = await chromium.connect({
-  wsEndpoint: 'ws://localhost:3001/ws'
-});
-
-const page = await browser.newPage();
-await page.goto('https://example.com');
-await browser.close();
-```
-
----
-
-## 📊 Performance
-
-*Tested on 4 vCPU, 8GB RAM*
-
-| Operation | Cold Start | With Browser Pool | Improvement |
-|-----------|-----------|-------------------|-------------|
-| Screenshot | 7.6s | 1.2s | **85% faster** |
-| PDF | 8.0s | 2.0s | **75% faster** |
-| Content | 4.5s | 1.5s | **67% faster** |
+- **[Backend API Documentation](./backend/README.md)** - Full API reference
+- **[Frontend Landing Page](./frontend/README.md)** - Website documentation
+- **[Docker Deployment](./backend/docs/DOCKER_README.md)** - Production deployment guide
+- **[API Examples](./backend/docs/)** - Code examples and tutorials
 
 ---
 
 ## 🏗️ Architecture
 
 ```
-┌─────────────────────────────────────────┐
-│           Client Layer                   │
-│  Puppeteer / Playwright / REST API      │
-└───────────────┬─────────────────────────┘
-                │
-                │ HTTP / WebSocket
-                │
-┌───────────────▼─────────────────────────┐
-│           API Gateway                    │
-│  ┌──────────┐      ┌─────────────┐     │
-│  │ REST API │      │ WebSocket   │     │
-│  │ Routes   │      │ CDP Proxy   │     │
-│  └──────────┘      └─────────────┘     │
-└───────────────┬─────────────────────────┘
-                │
-┌───────────────▼─────────────────────────┐
-│         Business Logic                   │
-│  ┌────────┐  ┌────────┐  ┌──────────┐  │
-│  │Browser │  │Session │  │  Queue   │  │
-│  │  Pool  │  │Manager │  │ Manager  │  │
-│  └────────┘  └────────┘  └──────────┘  │
-└───────────────┬─────────────────────────┘
-                │
-┌───────────────▼─────────────────────────┐
-│       Chrome Instance Pool               │
-│  ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐  │
-│  │Chrome│ │Chrome│ │Chrome│ │Chrome│  │
-│  └──────┘ └──────┘ └──────┘ └──────┘  │
-└──────────────────────────────────────────┘
+Your Code → REST/WebSocket → browser.autos → Chromium Pool → Web
 ```
 
----
-
-## 📖 Documentation
-
-- [Docker Deployment Guide](./docs/DOCKER_README.md) - Docker deployment guide
-- [Testing Guide](./docs/TESTING.md) - Testing strategies and examples
-- [Queue System](./docs/QUEUE_README.md) - Queue system documentation
-- [Swagger UI](http://localhost:3001/docs) - Interactive API documentation
-
----
-
-## 🌟 Use Cases
-
-- 🧪 **CI/CD Testing** - Visual regression testing in your pipeline
-- 📝 **Report Generation** - HTML to PDF conversion at scale
-- 👀 **Web Monitoring** - Track content changes and get alerts
-- 📊 **Data Collection** - Scrape structured data efficiently
-- ✅ **E2E Testing** - Full browser automation for QA
-- 🖼️ **Thumbnails** - Batch webpage screenshot generation
-- 🔍 **SEO Audits** - Page analysis and crawling
+**Simple. Scalable. Reliable.**
 
 ---
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our contributing guidelines.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+We welcome contributions! See our [contributing guidelines](./CONTRIBUTING.md) for details.
 
 ---
 
@@ -272,16 +116,12 @@ MIT License - Free for commercial use.
 
 ---
 
-## 🔗 Links
-
-- 🌐 **Website**: https://browser.autos
-- 📁 **GitHub**: https://github.com/browser-autos/browser-autos
-- 🐳 **Docker Hub**: https://hub.docker.com/r/browserautos/browser-autos
-- 📦 **GitHub Container Registry**: https://github.com/orgs/browser-autos/packages/container/package/browser-autos
-- 🐛 **Issues**: https://github.com/browser-autos/browser-autos/issues
-
----
+<div align="center">
 
 **Built with ❤️ by the browser.autos team**
 
-**Version:** 1.0.0 | **Last Updated:** 2025-10-11
+[Website](https://browser.autos) · [GitHub](https://github.com/browser-autos) · [Docker Hub](https://hub.docker.com/r/browserautos/browser-autos)
+
+<sub>Making browser automation accessible to everyone, everywhere</sub>
+
+</div>
