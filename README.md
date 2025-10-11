@@ -1,9 +1,9 @@
 # browser.autos
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./logo_white.png">
-  <source media="(prefers-color-scheme: light)" srcset="./logo_black.png">
-  <img alt="browser.autos logo" src="./logo.png" width="200">
+  <source media="(prefers-color-scheme: dark)" srcset="./assets/logo_white.png">
+  <source media="(prefers-color-scheme: light)" srcset="./assets/logo_black.png">
+  <img alt="browser.autos logo" src="./assets/logo.png" width="200">
 </picture>
 
 **Production-ready browser automation API powered by Playwright Chromium**

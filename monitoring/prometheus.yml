@@ -1,63 +1,45 @@
-# ================================================================================
 # Prometheus Configuration for Browser.autos
-# ================================================================================
 
 global:
   scrape_interval: 15s
   evaluation_interval: 15s
   external_labels:
-    cluster: 'browser-autos'
+    monitor: 'browser-autos'
     environment: 'production'
 
-# Alertmanager configuration (可选)
-# alerting:
-#   alertmanagers:
-#     - static_configs:
-#         - targets:
-#           - alertmanager:9093
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+          # - alertmanager:9093
 
-# 规则文件（可选）
-# rule_files:
-#   - 'alert.rules.yml'
+# Load rules once and periodically evaluate them
+rule_files:
+  # - "alert_rules.yml"
 
-# 抓取配置
+# Scrape configurations
 scrape_configs:
-  # ============================================================================
-  # Browser.autos API 服务
-  # ============================================================================
+  # Browser.autos API metrics
   - job_name: 'browser-autos-api'
     static_configs:
       - targets: ['api:3001']
         labels:
           service: 'api'
           component: 'backend'
-
     metrics_path: '/metrics'
-    scrape_interval: 15s
-    scrape_timeout: 10s
+    scrape_interval: 10s
+    scrape_timeout: 5s
 
-    # 健康检查
-    relabel_configs:
-      - source_labels: [__address__]
-        target_label: __param_target
-      - source_labels: [__param_target]
-        target_label: instance
-      - target_label: __address__
-        replacement: api:3001
+  # Redis metrics (if redis_exporter is used)
+  # - job_name: 'redis'
+  #   static_configs:
+  #     - targets: ['redis-exporter:9121']
+  #       labels:
+  #         service: 'redis'
+  #         component: 'cache'
 
-  # ============================================================================
-  # Redis
-  # ============================================================================
-  - job_name: 'redis'
-    static_configs:
-      - targets: ['redis:6379']
-        labels:
-          service: 'redis'
-          component: 'cache'
-
-  # ============================================================================
-  # Prometheus 自身监控
-  # ============================================================================
+  # Prometheus self-monitoring
   - job_name: 'prometheus'
     static_configs:
       - targets: ['localhost:9090']
