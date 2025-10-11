@@ -1,10 +1,10 @@
 <div align="center">
 
-# browser.autos
-
 <img src="./assets/logo_github.png" alt="browser.autos logo" width="100%">
 
-<h3>基于 Playwright Chromium 的生产级浏览器自动化 API</h3>
+# browser.autos
+
+**云原生无头浏览器自动化 API**
 
 </div>
 
@@ -287,10 +287,10 @@ volumes:
 ### 环境要求
 
 - Node.js 20+
-- Docker（用于 Redis）
+- Docker
 - Git
 
-### 设置步骤
+### 从源码运行
 
 ```bash
 # 克隆仓库
@@ -298,10 +298,8 @@ git clone git@github.com:browser-autos/browser-autos.git
 cd browser-autos
 
 # 安装依赖
+cd backend
 npm install
-
-# 启动 Redis
-docker run -d -p 6379:6379 redis:7-alpine
 
 # 启动开发服务器
 npm run dev
@@ -309,27 +307,14 @@ npm run dev
 # API 地址: http://localhost:3001
 ```
 
-### 测试
-
-```bash
-# 运行所有测试
-npm test
-
-# 监视模式
-npm run test:watch
-
-# 生成覆盖率报告
-npm run test:coverage
-```
-
 ---
 
 ## 📖 文档
 
-- [Docker 部署指南](./docs/DOCKER_README.md) - 生产环境部署指南
-- [测试指南](./docs/TESTING.md) - 测试策略和示例
-- [队列系统](./docs/QUEUE_README.md) - 异步任务处理
-- [API 文档](http://localhost:3001/docs) - 交互式 Swagger UI
+- [API 文档](./backend/README.md) - 完整 API 参考
+- [Docker 部署指南](./backend/docs/DOCKER_README.md) - 生产环境部署
+- [凭据管理指南](./backend/docs/CREDENTIALS_GUIDE.md) - 认证设置
+- [API 示例](./backend/docs/) - 代码示例和教程
 
 ---
 
@@ -410,7 +395,7 @@ MIT License - 可免费用于商业用途。
 - 🌐 **官网**：https://browser.autos
 - 📁 **GitHub**：https://github.com/browser-autos/browser-autos
 - 🐳 **Docker Hub**：https://hub.docker.com/r/browserautos/browser-autos
-- 📦 **GitHub 容器镜像**：https://github.com/orgs/browser-autos/packages/container/package/browser-autos
+- 📖 **API 文档**：[backend/README.md](./backend/README.md)
 - 🐛 **问题反馈**：https://github.com/browser-autos/browser-autos/issues
 
 ---

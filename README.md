@@ -2,36 +2,17 @@
 
 <img src="./assets/logo_github.png" alt="browser.autos logo" width="100%">
 
-# Cloud-Native Headless Browser Platform
+# browser.autos
 
-**Write code. Run anywhere. Scrape everything.**
+**Cloud-Native Headless Browser Automation API**
 
 [![Docker](https://img.shields.io/badge/docker-browserautos%2Fbrowser--autos-blue?logo=docker)](https://hub.docker.com/r/browserautos/browser-autos)
 [![Stars](https://img.shields.io/github/stars/browser-autos/browser-autos?style=social)](https://github.com/browser-autos/browser-autos)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-[🌐 Website](https://browser.autos) | [📘 Docs](./backend/README.md) | [🐳 Docker Hub](https://hub.docker.com/r/browserautos/browser-autos) | [🇨🇳 中文文档](./README_CN.md)
+[🌐 Website](https://browser.autos) | [📘 Documentation](./backend/README.md) | [🐳 Docker Hub](https://hub.docker.com/r/browserautos/browser-autos) | [🇨🇳 中文文档](./README_CN.md)
 
 </div>
-
----
-
-## 📁 Repository Structure
-
-```
-browser.autos/
-├── backend/          # API Server (Node.js + TypeScript + Fastify)
-│   ├── src/          # Source code
-│   ├── docker/       # Docker configurations
-│   ├── docs/         # API documentation
-│   └── tests/        # Test suites
-│
-├── frontend/         # Landing Page (Next.js + TypeScript)
-│   ├── app/          # Next.js app directory
-│   └── components/   # React components
-│
-└── assets/           # Shared assets (logos, images)
-```
 
 ---
 
@@ -57,15 +38,18 @@ docker logs browser-autos | grep "Default credentials"
 ### From Source
 
 ```bash
-# Backend API
+# Clone repository
+git clone git@github.com:browser-autos/browser-autos.git
+cd browser-autos
+
+# Install dependencies
 cd backend
 npm install
+
+# Start development server
 npm run dev
 
-# Frontend Landing Page
-cd frontend
-npm install
-npm run dev
+# API available at http://localhost:3001
 ```
 
 ---
@@ -95,9 +79,9 @@ npm run dev
 
 ## 📚 Documentation
 
-- **[Backend API Documentation](./backend/README.md)** - Full API reference
-- **[Frontend Landing Page](./frontend/README.md)** - Website documentation
+- **[API Documentation](./backend/README.md)** - Complete API reference
 - **[Docker Deployment](./backend/docs/DOCKER_README.md)** - Production deployment guide
+- **[Credentials Guide](./backend/docs/CREDENTIALS_GUIDE.md)** - Authentication setup
 - **[API Examples](./backend/docs/)** - Code examples and tutorials
 
 ---
@@ -128,8 +112,6 @@ MIT License - Free for commercial use.
 
 **Built with ❤️ by the browser.autos team**
 
-[Website](https://browser.autos) · [GitHub](https://github.com/browser-autos) · [Docker Hub](https://hub.docker.com/r/browserautos/browser-autos)
-
-<sub>Making browser automation accessible to everyone, everywhere</sub>
+[Website](https://browser.autos) · [API Docs](./backend/README.md) · [Docker Hub](https://hub.docker.com/r/browserautos/browser-autos)
 
 </div>
