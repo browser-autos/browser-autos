@@ -1,0 +1,115 @@
+# Dependabot 配置 - 自动更新依赖
+# 文档: https://docs.github.com/en/code-security/dependabot/dependabot-version-updates
+
+version: 2
+updates:
+  # Backend Node.js dependencies
+  - package-ecosystem: "npm"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Shanghai"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "your-github-username"  # 替换为你的 GitHub 用户名
+    labels:
+      - "dependencies"
+      - "backend"
+    # 分组更新策略
+    groups:
+      # Playwright 自动更新
+      playwright:
+        patterns:
+          - "playwright*"
+        update-types:
+          - "minor"
+          - "patch"
+      # Puppeteer 自动更新
+      puppeteer:
+        patterns:
+          - "puppeteer*"
+        update-types:
+          - "minor"
+          - "patch"
+      # Fastify 生态
+      fastify:
+        patterns:
+          - "@fastify/*"
+          - "fastify"
+        update-types:
+          - "minor"
+          - "patch"
+      # 开发依赖
+      dev-dependencies:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+    # 忽略主要版本更新（需要手动审查）
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  # Frontend Next.js dependencies
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Shanghai"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "your-github-username"
+    labels:
+      - "dependencies"
+      - "frontend"
+    groups:
+      # Next.js 及相关
+      nextjs:
+        patterns:
+          - "next*"
+          - "@next/*"
+        update-types:
+          - "minor"
+          - "patch"
+      # React 生态
+      react:
+        patterns:
+          - "react*"
+          - "@types/react*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Docker base images
+  - package-ecosystem: "docker"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "09:00"
+      timezone: "Asia/Shanghai"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "your-github-username"
+    labels:
+      - "dependencies"
+      - "docker"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+      time: "09:00"
+      timezone: "Asia/Shanghai"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "your-github-username"
+    labels:
+      - "dependencies"
+      - "ci"
