@@ -9,10 +9,10 @@
 **基于 Playwright Chromium 的生产级浏览器自动化 API**
 
 [![Docker Image](https://img.shields.io/badge/docker-browserautos%2Fchromium-blue?logo=docker)](https://hub.docker.com/r/browserautos/chromium)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![GitHub](https://img.shields.io/github/stars/browser-autos/browser-autos?style=social)](https://github.com/browser-autos/browser-autos)
 
-[🇺🇸 English](./README.md) | [📖 文档](./backend/README.md) | [🐳 Docker Hub](https://hub.docker.com/r/browserautos/chromium)
+[🇺🇸 English](./README.md) | [🐳 Docker Hub](https://hub.docker.com/r/browserautos/chromium)
 
 ---
 
@@ -243,8 +243,7 @@ volumes:
 git clone git@github.com:browser-autos/browser-autos.git
 cd browser-autos
 
-# 安装后端依赖
-cd backend
+# 安装依赖
 npm install
 
 # 启动 Redis
@@ -273,10 +272,9 @@ npm run test:coverage
 
 ## 📖 文档
 
-- [后端文档](./backend/README.md) - 完整 API 参考
-- [Docker 部署](./backend/DOCKER_README.md) - 生产环境部署指南
-- [测试指南](./backend/TESTING.md) - 测试策略和示例
-- [队列系统](./backend/QUEUE_README.md) - 异步任务处理
+- [Docker 部署指南](./docs/DOCKER_README.md) - 生产环境部署指南
+- [测试指南](./docs/TESTING.md) - 测试策略和示例
+- [队列系统](./docs/QUEUE_README.md) - 异步任务处理
 - [API 文档](http://localhost:3001/docs) - 交互式 Swagger UI
 
 ---
@@ -349,7 +347,7 @@ npm run test:coverage
 
 ## 📄 许可证
 
-MIT License - 可免费用于商业用途。详见 [LICENSE](./LICENSE)。
+MIT License - 可免费用于商业用途。
 
 ---
 

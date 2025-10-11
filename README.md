@@ -9,10 +9,10 @@
 **Production-ready browser automation API powered by Playwright Chromium**
 
 [![Docker Image](https://img.shields.io/badge/docker-browserautos%2Fchromium-blue?logo=docker)](https://hub.docker.com/r/browserautos/chromium)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![GitHub](https://img.shields.io/github/stars/browser-autos/browser-autos?style=social)](https://github.com/browser-autos/browser-autos)
 
-[🇨🇳 中文文档](./README_CN.md) | [📖 Full Documentation](./CLAUDE.MD) | [🐳 Docker Hub](https://hub.docker.com/r/browserautos/chromium)
+[🇨🇳 中文文档](./README_CN.md) | [🐳 Docker Hub](https://hub.docker.com/r/browserautos/chromium)
 
 ---
 
@@ -217,10 +217,9 @@ await browser.close();
 
 ## 📖 Documentation
 
-- [CLAUDE.MD](./CLAUDE.MD) - Complete developer documentation
-- [DOCKER_README.md](./DOCKER_README.md) - Docker deployment guide
-- [TESTING.md](./TESTING.md) - Testing strategies and examples
-- [QUEUE_README.md](./QUEUE_README.md) - Queue system documentation
+- [Docker Deployment Guide](./docs/DOCKER_README.md) - Docker deployment guide
+- [Testing Guide](./docs/TESTING.md) - Testing strategies and examples
+- [Queue System](./docs/QUEUE_README.md) - Queue system documentation
 - [Swagger UI](http://localhost:3001/docs) - Interactive API documentation
 
 ---
@@ -251,7 +250,7 @@ We welcome contributions! Please see our contributing guidelines.
 
 ## 📄 License
 
-MIT License - Free for commercial use. See [LICENSE](./LICENSE) for details.
+MIT License - Free for commercial use.
 
 ---
 
