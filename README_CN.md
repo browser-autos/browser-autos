@@ -60,6 +60,8 @@
 
 ### 使用 Docker（推荐）
 
+**方式 1: Docker Hub**
+
 ```bash
 # 拉取最新镜像
 docker pull browserautos/chromium:latest
@@ -75,6 +77,22 @@ docker run -d \
 
 # 测试服务
 curl http://localhost:3001/health
+```
+
+**方式 2: GitHub Container Registry**
+
+```bash
+# 从 GHCR 拉取
+docker pull ghcr.io/browser-autos/browser-autos:latest
+
+# 运行容器
+docker run -d \
+  --name browser-autos \
+  -p 3001:3001 \
+  -e JWT_SECRET=your-secret-key \
+  --shm-size=2gb \
+  --memory=4g \
+  ghcr.io/browser-autos/browser-autos:latest
 ```
 
 **可用标签：**
@@ -356,6 +374,7 @@ MIT License - 可免费用于商业用途。
 - 🌐 **官网**：https://browser.autos
 - 📁 **GitHub**：https://github.com/browser-autos/browser-autos
 - 🐳 **Docker Hub**：https://hub.docker.com/r/browserautos/chromium
+- 📦 **GitHub 容器镜像**：https://github.com/orgs/browser-autos/packages/container/package/browser-autos
 - 🐛 **问题反馈**：https://github.com/browser-autos/browser-autos/issues
 
 ---

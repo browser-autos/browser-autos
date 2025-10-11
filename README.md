@@ -35,6 +35,8 @@ Perfect for CI/CD testing, report generation, web monitoring, data collection, a
 
 ### Using Docker (Recommended)
 
+**Option 1: Docker Hub**
+
 ```bash
 # Pull the latest image
 docker pull browserautos/chromium:latest
@@ -50,6 +52,22 @@ docker run -d \
 
 # Test the service
 curl http://localhost:3001/health
+```
+
+**Option 2: GitHub Container Registry**
+
+```bash
+# Pull from GHCR
+docker pull ghcr.io/browser-autos/browser-autos:latest
+
+# Run the container
+docker run -d \
+  --name chromium \
+  -p 3001:3001 \
+  -e JWT_SECRET=your-secret-key \
+  --shm-size=2gb \
+  --memory=4g \
+  ghcr.io/browser-autos/browser-autos:latest
 ```
 
 ### Local Development
@@ -259,6 +277,7 @@ MIT License - Free for commercial use.
 - 🌐 **Website**: https://browser.autos
 - 📁 **GitHub**: https://github.com/browser-autos/browser-autos
 - 🐳 **Docker Hub**: https://hub.docker.com/r/browserautos/chromium
+- 📦 **GitHub Container Registry**: https://github.com/orgs/browser-autos/packages/container/package/browser-autos
 - 🐛 **Issues**: https://github.com/browser-autos/browser-autos/issues
 
 ---

@@ -36,8 +36,11 @@
 ## 🎯 Quick Start
 
 ```bash
-# Pull our Docker image
+# Pull from Docker Hub
 docker pull browserautos/chromium:latest
+
+# Or pull from GitHub Container Registry
+docker pull ghcr.io/browser-autos/browser-autos:latest
 
 # Run the service
 docker run -d -p 3001:3001 \
@@ -73,7 +76,11 @@ curl -X POST http://localhost:3001/screenshot \
 ## 📦 Our Repositories
 
 - **[browser-autos/browser-autos](https://github.com/browser-autos/browser-autos)** - Main API platform (TypeScript + Fastify)
-- **[browserautos/chromium](https://hub.docker.com/r/browserautos/chromium)** - Official Docker image
+
+## 🐳 Docker Images
+
+- **[Docker Hub](https://hub.docker.com/r/browserautos/chromium)** - `browserautos/chromium:latest`
+- **[GitHub Container Registry](https://github.com/orgs/browser-autos/packages/container/package/browser-autos)** - `ghcr.io/browser-autos/browser-autos:latest`
 
 ---
 
@@ -128,6 +135,7 @@ We welcome contributions from the community!
 - 🌐 **Website**: [browser.autos](https://browser.autos)
 - 📖 **Documentation**: [GitHub](https://github.com/browser-autos/browser-autos)
 - 🐳 **Docker Hub**: [browserautos/chromium](https://hub.docker.com/r/browserautos/chromium)
+- 📦 **GitHub Container Registry**: [browser-autos](https://github.com/orgs/browser-autos/packages/container/package/browser-autos)
 - 💬 **Issues**: [GitHub Issues](https://github.com/browser-autos/browser-autos/issues)
 
 ---
