@@ -10,7 +10,7 @@
   </p>
 
   <p>
-    <a href="https://hub.docker.com/r/browserautos/chromium"><img src="https://img.shields.io/badge/docker-browserautos%2Fchromium-blue?logo=docker" alt="Docker Image"></a>
+    <a href="https://hub.docker.com/r/browserautos/browser-autos"><img src="https://img.shields.io/badge/docker-browserautos%2Fbrowser--autos-blue?logo=docker" alt="Docker Image"></a>
     <a href="https://github.com/browser-autos/browser-autos"><img src="https://img.shields.io/github/stars/browser-autos/browser-autos?style=social" alt="GitHub Stars"></a>
     <a href="https://github.com/browser-autos/browser-autos/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License"></a>
   </p>
@@ -37,7 +37,7 @@
 
 ```bash
 # Pull from Docker Hub
-docker pull browserautos/chromium:latest
+docker pull browserautos/browser-autos:latest
 
 # Or pull from GitHub Container Registry
 docker pull ghcr.io/browser-autos/browser-autos:latest
@@ -46,7 +46,7 @@ docker pull ghcr.io/browser-autos/browser-autos:latest
 docker run -d -p 3001:3001 \
   -e JWT_SECRET=your-secret-key \
   --shm-size=2gb \
-  browserautos/chromium:latest
+  browserautos/browser-autos:latest
 
 # Test it out
 curl -X POST http://localhost:3001/screenshot \
@@ -79,7 +79,7 @@ curl -X POST http://localhost:3001/screenshot \
 
 ## 🐳 Docker Images
 
-- **[Docker Hub](https://hub.docker.com/r/browserautos/chromium)** - `browserautos/chromium:latest`
+- **[Docker Hub](https://hub.docker.com/r/browserautos/browser-autos)** - `browserautos/browser-autos:latest`
 - **[GitHub Container Registry](https://github.com/orgs/browser-autos/packages/container/package/browser-autos)** - `ghcr.io/browser-autos/browser-autos:latest`
 
 ---
@@ -134,7 +134,7 @@ We welcome contributions from the community!
 
 - 🌐 **Website**: [browser.autos](https://browser.autos)
 - 📖 **Documentation**: [GitHub](https://github.com/browser-autos/browser-autos)
-- 🐳 **Docker Hub**: [browserautos/chromium](https://hub.docker.com/r/browserautos/chromium)
+- 🐳 **Docker Hub**: [browserautos/browser-autos](https://hub.docker.com/r/browserautos/browser-autos)
 - 📦 **GitHub Container Registry**: [browser-autos](https://github.com/orgs/browser-autos/packages/container/package/browser-autos)
 - 💬 **Issues**: [GitHub Issues](https://github.com/browser-autos/browser-autos/issues)
 
