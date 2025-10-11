@@ -8,11 +8,11 @@
 
 </div>
 
-[![Docker Image](https://img.shields.io/badge/docker-browserautos%2Fchromium-blue?logo=docker)](https://hub.docker.com/r/browserautos/chromium)
+[![Docker Image](https://img.shields.io/badge/docker-browserautos%2Fbrowser--autos-blue?logo=docker)](https://hub.docker.com/r/browserautos/browser-autos)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![GitHub](https://img.shields.io/github/stars/browser-autos/browser-autos?style=social)](https://github.com/browser-autos/browser-autos)
 
-[🇺🇸 English](./README.md) | [🐳 Docker Hub](https://hub.docker.com/r/browserautos/chromium)
+[🇺🇸 English](./README.md) | [🐳 Docker Hub](https://hub.docker.com/r/browserautos/browser-autos)
 
 ---
 
@@ -64,7 +64,7 @@
 
 ```bash
 # 拉取最新镜像
-docker pull browserautos/chromium:latest
+docker pull browserautos/browser-autos:latest
 
 # 运行容器
 docker run -d \
@@ -73,7 +73,7 @@ docker run -d \
   -e JWT_SECRET=your-secret-key \
   --shm-size=2gb \
   --memory=4g \
-  browserautos/chromium:latest
+  browserautos/browser-autos:latest
 
 # 测试服务
 curl http://localhost:3001/health
@@ -211,7 +211,7 @@ version: '3.8'
 
 services:
   browser-autos:
-    image: browserautos/chromium:latest
+    image: browserautos/browser-autos:latest
     ports:
       - "3001:3001"
     environment:
@@ -373,7 +373,7 @@ MIT License - 可免费用于商业用途。
 
 - 🌐 **官网**：https://browser.autos
 - 📁 **GitHub**：https://github.com/browser-autos/browser-autos
-- 🐳 **Docker Hub**：https://hub.docker.com/r/browserautos/chromium
+- 🐳 **Docker Hub**：https://hub.docker.com/r/browserautos/browser-autos
 - 📦 **GitHub 容器镜像**：https://github.com/orgs/browser-autos/packages/container/package/browser-autos
 - 🐛 **问题反馈**：https://github.com/browser-autos/browser-autos/issues
 

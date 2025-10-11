@@ -8,11 +8,11 @@
 
 </div>
 
-[![Docker Image](https://img.shields.io/badge/docker-browserautos%2Fchromium-blue?logo=docker)](https://hub.docker.com/r/browserautos/chromium)
+[![Docker Image](https://img.shields.io/badge/docker-browserautos%2Fbrowser--autos-blue?logo=docker)](https://hub.docker.com/r/browserautos/browser-autos)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![GitHub](https://img.shields.io/github/stars/browser-autos/browser-autos?style=social)](https://github.com/browser-autos/browser-autos)
 
-[🇨🇳 中文文档](./README_CN.md) | [🐳 Docker Hub](https://hub.docker.com/r/browserautos/chromium)
+[🇨🇳 中文文档](./README_CN.md) | [🐳 Docker Hub](https://hub.docker.com/r/browserautos/browser-autos)
 
 ---
 
@@ -39,16 +39,16 @@ Perfect for CI/CD testing, report generation, web monitoring, data collection, a
 
 ```bash
 # Pull the latest image
-docker pull browserautos/chromium:latest
+docker pull browserautos/browser-autos:latest
 
 # Run the container
 docker run -d \
-  --name chromium \
+  --name browser-autos \
   -p 3001:3001 \
   -e JWT_SECRET=your-secret-key \
   --shm-size=2gb \
   --memory=4g \
-  browserautos/chromium:latest
+  browserautos/browser-autos:latest
 
 # Test the service
 curl http://localhost:3001/health
@@ -62,7 +62,7 @@ docker pull ghcr.io/browser-autos/browser-autos:latest
 
 # Run the container
 docker run -d \
-  --name chromium \
+  --name browser-autos \
   -p 3001:3001 \
   -e JWT_SECRET=your-secret-key \
   --shm-size=2gb \
@@ -276,7 +276,7 @@ MIT License - Free for commercial use.
 
 - 🌐 **Website**: https://browser.autos
 - 📁 **GitHub**: https://github.com/browser-autos/browser-autos
-- 🐳 **Docker Hub**: https://hub.docker.com/r/browserautos/chromium
+- 🐳 **Docker Hub**: https://hub.docker.com/r/browserautos/browser-autos
 - 📦 **GitHub Container Registry**: https://github.com/orgs/browser-autos/packages/container/package/browser-autos
 - 🐛 **Issues**: https://github.com/browser-autos/browser-autos/issues
 

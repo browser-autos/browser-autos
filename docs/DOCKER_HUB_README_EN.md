@@ -1,6 +1,6 @@
 # browser.autos
 
-> **Official Docker Image:** `browserautos/chromium`
+> **Official Docker Image:** `browserautos/browser-autos`
 
 Production-ready browser automation API powered by Playwright Chromium. Provides REST APIs and WebSocket CDP proxy for screenshots, PDF generation, content extraction, and web scraping.
 
@@ -12,12 +12,12 @@ Production-ready browser automation API powered by Playwright Chromium. Provides
 
 ```bash
 docker run -d \
-  --name chromium \
+  --name browser-autos \
   -p 3001:3001 \
   -e JWT_SECRET=your-secret-key \
   --shm-size=2gb \
   --memory=4g \
-  browserautos/chromium:latest
+  browserautos/browser-autos:latest
 
 # Test it
 curl http://localhost:3001/health
@@ -146,8 +146,8 @@ curl -H "X-API-Key: YOUR_KEY" http://localhost:3001/screenshot
 version: '3.8'
 
 services:
-  chromium:
-    image: browserautos/chromium:latest
+  browser-autos:
+    image: browserautos/browser-autos:latest
     ports:
       - "3001:3001"
     environment:
@@ -220,9 +220,9 @@ LOG_LEVEL=info
 
 ```bash
 # Pull specific version
-docker pull browserautos/chromium:latest
-docker pull browserautos/chromium:1.0.0
-docker pull browserautos/chromium:debian
+docker pull browserautos/browser-autos:latest
+docker pull browserautos/browser-autos:1.0.0
+docker pull browserautos/browser-autos:debian
 ```
 
 ---
@@ -273,25 +273,25 @@ docker pull browserautos/chromium:debian
 **Chromium won't start:**
 ```bash
 # Ensure shared memory is set
-docker run --shm-size=2gb browserautos/chromium:latest
+docker run --shm-size=2gb browserautos/browser-autos:latest
 ```
 
 **Out of memory:**
 ```bash
 # Increase memory limit
-docker run --memory=4g browserautos/chromium:latest
+docker run --memory=4g browserautos/browser-autos:latest
 ```
 
 **Check logs:**
 ```bash
-docker logs chromium
-docker logs -f chromium  # Follow mode
+docker logs browser-autos
+docker logs -f browser-autos  # Follow mode
 ```
 
 **Authentication errors:**
 ```bash
 # Disable auth for testing (not recommended for production)
-docker run -e REQUIRE_AUTH=false browserautos/chromium:latest
+docker run -e REQUIRE_AUTH=false browserautos/browser-autos:latest
 ```
 
 ---
@@ -329,7 +329,7 @@ docker run -e REQUIRE_AUTH=false browserautos/chromium:latest
 
 **Check version:**
 ```bash
-docker run --rm browserautos/chromium:latest \
+docker run --rm browserautos/browser-autos:latest \
   node -e "console.log(require('./package.json').version)"
 ```
 
@@ -361,7 +361,7 @@ docker run --rm browserautos/chromium:latest \
 
 **Maintained by the browser.autos Team**
 
-**Image:** `browserautos/chromium` _(stable, unchanged)_
+**Image:** `browserautos/browser-autos` _(stable, unchanged)_
 **Version:** 1.0.0
 **Chromium:** 141.0.7390.37 (Playwright)
 **Updated:** 2025-10-11

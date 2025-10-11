@@ -8,7 +8,7 @@
 
 ### Docker Hub (Primary)
 ```bash
-docker pull browserautos/chromium:latest
+docker pull browserautos/browser-autos:latest
 ```
 
 ### GitHub Container Registry (Alternative)
@@ -237,7 +237,7 @@ Key labels:
 
 | Feature | Docker Hub | GHCR |
 |---------|-----------|------|
-| **Image Name** | `browserautos/chromium` | `ghcr.io/browser-autos/browser-autos` |
+| **Image Name** | `browserautos/browser-autos` | `ghcr.io/browser-autos/browser-autos` |
 | **Pull Speed** | ✅ Fast (global CDN) | ✅ Fast (GitHub CDN) |
 | **Free Tier** | 200 pulls/6h | ✅ Unlimited public pulls |
 | **GitHub Integration** | ❌ Manual sync | ✅ Native integration |
@@ -255,7 +255,7 @@ If you encounter rate limits with Docker Hub, switch to GHCR:
 
 ```bash
 # Docker Hub (rate limited)
-docker pull browserautos/chromium:latest
+docker pull browserautos/browser-autos:latest
 
 # GHCR (unlimited for public images)
 docker pull ghcr.io/browser-autos/browser-autos:latest
@@ -282,7 +282,7 @@ Verify the image name:
 ghcr.io/browser-autos/browser-autos:latest
 
 # ❌ Wrong
-ghcr.io/browserautos/chromium:latest  # This is Docker Hub naming
+ghcr.io/browserautos/browser-autos:latest  # This is Docker Hub naming
 ```
 
 ---
@@ -295,7 +295,7 @@ To migrate from Docker Hub to GHCR:
 
 **Before:**
 ```yaml
-image: browserautos/chromium:latest
+image: browserautos/browser-autos:latest
 ```
 
 **After:**
@@ -307,7 +307,7 @@ image: ghcr.io/browser-autos/browser-autos:latest
 
 **Before:**
 ```bash
-docker pull browserautos/chromium:latest
+docker pull browserautos/browser-autos:latest
 ```
 
 **After:**
@@ -325,7 +325,7 @@ Replace Docker Hub login with GHCR login (if needed).
 
 - **GHCR Repository**: https://github.com/orgs/browser-autos/packages/container/package/browser-autos
 - **GitHub Source**: https://github.com/browser-autos/browser-autos
-- **Docker Hub** (alternative): https://hub.docker.com/r/browserautos/chromium
+- **Docker Hub** (alternative): https://hub.docker.com/r/browserautos/browser-autos
 - **Documentation**: https://github.com/browser-autos/browser-autos/tree/main/docs
 
 ---

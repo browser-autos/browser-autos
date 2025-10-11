@@ -119,7 +119,7 @@ Once the workflow completes successfully:
 
 ### 1. Verify Docker Hub
 
-Visit: https://hub.docker.com/r/browserautos/chromium
+Visit: https://hub.docker.com/r/browserautos/browser-autos
 
 You should see:
 - Tags: `latest`, `1.0.0`, `1.0`, `1`, `debian`
@@ -138,7 +138,7 @@ You should see:
 
 ```bash
 # From Docker Hub
-docker pull browserautos/chromium:1.0.0
+docker pull browserautos/browser-autos:1.0.0
 
 # From GHCR
 docker pull ghcr.io/browser-autos/browser-autos:1.0.0
@@ -200,7 +200,7 @@ The workflow uses GitHub Actions cache to speed up subsequent builds:
 
 - **Actions Page**: https://github.com/browser-autos/browser-autos/actions
 - **Workflow File**: `.github/workflows/docker-publish.yml`
-- **Docker Hub**: https://hub.docker.com/r/browserautos/chromium
+- **Docker Hub**: https://hub.docker.com/r/browserautos/browser-autos
 - **GHCR Package**: https://github.com/orgs/browser-autos/packages/container/package/browser-autos
 
 ---
