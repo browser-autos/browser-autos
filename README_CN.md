@@ -298,7 +298,6 @@ git clone git@github.com:browser-autos/browser-autos.git
 cd browser-autos
 
 # 安装依赖
-cd backend
 npm install
 
 # 启动开发服务器
@@ -311,10 +310,10 @@ npm run dev
 
 ## 📖 文档
 
-- [API 文档](./backend/README.md) - 完整 API 参考
-- [Docker 部署指南](./backend/docs/DOCKER_README.md) - 生产环境部署
-- [凭据管理指南](./backend/docs/CREDENTIALS_GUIDE.md) - 认证设置
-- [API 示例](./backend/docs/) - 代码示例和教程
+- [API 文档](./docs/) - 完整 API 参考
+- [Docker 部署指南](./docs/DOCKER_README.md) - 生产环境部署
+- [凭据管理指南](./docs/CREDENTIALS_GUIDE.md) - 认证设置
+- [API 示例](./docs/) - 代码示例和教程
 
 ---
 
@@ -395,7 +394,7 @@ MIT License - 可免费用于商业用途。
 - 🌐 **官网**：https://browser.autos
 - 📁 **GitHub**：https://github.com/browser-autos/browser-autos
 - 🐳 **Docker Hub**：https://hub.docker.com/r/browserautos/browser-autos
-- 📖 **API 文档**：[backend/README.md](./backend/README.md)
+- 📖 **API 文档**：[docs/](./docs/)
 - 🐛 **问题反馈**：https://github.com/browser-autos/browser-autos/issues
 
 ---

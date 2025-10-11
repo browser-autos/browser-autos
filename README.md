@@ -10,7 +10,7 @@
 [![Stars](https://img.shields.io/github/stars/browser-autos/browser-autos?style=social)](https://github.com/browser-autos/browser-autos)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-[🌐 Website](https://browser.autos) | [📘 Documentation](./backend/README.md) | [🐳 Docker Hub](https://hub.docker.com/r/browserautos/browser-autos) | [🇨🇳 中文文档](./README_CN.md)
+[🌐 Website](https://browser.autos) | [📘 Documentation](./README.md) | [🐳 Docker Hub](https://hub.docker.com/r/browserautos/browser-autos) | [🇨🇳 中文文档](./README_CN.md)
 
 </div>
 
@@ -43,7 +43,6 @@ git clone git@github.com:browser-autos/browser-autos.git
 cd browser-autos
 
 # Install dependencies
-cd backend
 npm install
 
 # Start development server
@@ -79,10 +78,10 @@ npm run dev
 
 ## 📚 Documentation
 
-- **[API Documentation](./backend/README.md)** - Complete API reference
-- **[Docker Deployment](./backend/docs/DOCKER_README.md)** - Production deployment guide
-- **[Credentials Guide](./backend/docs/CREDENTIALS_GUIDE.md)** - Authentication setup
-- **[API Examples](./backend/docs/)** - Code examples and tutorials
+- **[API Documentation](./docs/)** - Complete API reference
+- **[Docker Deployment](./docs/DOCKER_README.md)** - Production deployment guide
+- **[Credentials Guide](./docs/CREDENTIALS_GUIDE.md)** - Authentication setup
+- **[API Examples](./docs/)** - Code examples and tutorials
 
 ---
 
@@ -112,6 +111,6 @@ MIT License - Free for commercial use.
 
 **Built with ❤️ by the browser.autos team**
 
-[Website](https://browser.autos) · [API Docs](./backend/README.md) · [Docker Hub](https://hub.docker.com/r/browserautos/browser-autos)
+[Website](https://browser.autos) · [Docker Hub](https://hub.docker.com/r/browserautos/browser-autos) · [Documentation](./docs/)
 
 </div>
