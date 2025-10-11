@@ -43,3 +43,4 @@ tmp/
 # Claude Memory (不提交到 GitHub)
 MEMORY.md
 .claude/
+CLAUDE.MD
