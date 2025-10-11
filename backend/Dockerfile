@@ -15,7 +15,7 @@
 # ================================================================================
 # Stage 1: 依赖构建阶段
 # ================================================================================
-FROM node:20-bookworm-slim AS builder
+FROM node:24-bookworm-slim AS builder
 
 # 安装构建依赖
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -46,7 +46,7 @@ RUN npm prune --production
 # ================================================================================
 # Stage 2: 运行时镜像（Debian Slim + Playwright Chromium）
 # ================================================================================
-FROM node:20-bookworm-slim
+FROM node:24-bookworm-slim
 
 # 镜像元数据（OCI 标准）
 LABEL maintainer="Browser.autos Team" \
