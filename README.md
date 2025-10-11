@@ -12,7 +12,7 @@
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
 [![GitHub](https://img.shields.io/github/stars/browser-autos/browser-autos?style=social)](https://github.com/browser-autos/browser-autos)
 
-[🇨🇳 中文文档](./README_CN.md) | [📖 Documentation](./backend/README.md) | [🐳 Docker Hub](https://hub.docker.com/r/browserautos/chromium)
+[🇨🇳 中文文档](./README_CN.md) | [📖 Full Documentation](./CLAUDE.MD) | [🐳 Docker Hub](https://hub.docker.com/r/browserautos/chromium)
 
 ---
 
@@ -31,31 +31,6 @@ Perfect for CI/CD testing, report generation, web monitoring, data collection, a
 
 ---
 
-## ✨ Features
-
-### Core Capabilities
-
-| Feature | Description |
-|---------|-------------|
-| 📸 **Screenshot API** | Full page or element screenshots in PNG, JPEG, WebP |
-| 📄 **PDF Generation** | Convert web pages to PDF with custom styling |
-| 🔍 **Content Extraction** | Extract HTML, text, and metadata intelligently |
-| 🕷️ **Web Scraping** | CSS selector-based data extraction |
-| 🔌 **WebSocket Proxy** | Direct CDP protocol access for automation libraries |
-| ⚡ **Browser Pool** | Automatic browser instance reuse (85% faster) |
-| 📊 **Prometheus Metrics** | Built-in monitoring and observability |
-| 🔒 **Secure Auth** | JWT + API Key authentication |
-
-### Enterprise Features
-
-- **Multi-Architecture**: AMD64 and ARM64 support (Apple Silicon, AWS Graviton)
-- **Queue System**: Redis-backed async task processing with priority and retry
-- **Session Management**: Auto-cleanup, timeout controls, lifecycle tracking
-- **API Documentation**: Interactive Swagger/OpenAPI docs at `/docs`
-- **Production Ready**: Non-root execution, health checks, resource limits
-
----
-
 ## 🐳 Quick Start
 
 ### Using Docker (Recommended)
@@ -66,7 +41,7 @@ docker pull browserautos/chromium:latest
 
 # Run the container
 docker run -d \
-  --name browser-autos \
+  --name chromium \
   -p 3001:3001 \
   -e JWT_SECRET=your-secret-key \
   --shm-size=2gb \
@@ -77,17 +52,33 @@ docker run -d \
 curl http://localhost:3001/health
 ```
 
-**Available Tags:**
-- `latest` - Most recent stable version (Recommended)
-- `1.0.0` - Version-pinned for production
-- `debian` - Debian Bookworm baseline
-- `alpine` - Lightweight variant (Coming Soon)
+### Local Development
+
+```bash
+# Clone the repository
+git clone git@github.com:browser-autos/browser-autos.git
+cd browser-autos
+
+# Install dependencies
+npm install
+
+# Start Redis (required for queue)
+docker run -d -p 6379:6379 redis:7-alpine
+
+# Configure environment
+cp .env.example .env
+
+# Start development server
+npm run dev
+
+# API available at http://localhost:3001
+```
 
 ---
 
 ## 📚 API Examples
 
-### 1. Screenshot API
+### Screenshot
 
 ```bash
 curl -X POST http://localhost:3001/screenshot \
@@ -96,7 +87,7 @@ curl -X POST http://localhost:3001/screenshot \
   -o screenshot.png
 ```
 
-### 2. PDF Generation
+### PDF Generation
 
 ```bash
 curl -X POST http://localhost:3001/pdf \
@@ -105,7 +96,7 @@ curl -X POST http://localhost:3001/pdf \
   -o document.pdf
 ```
 
-### 3. Web Scraping
+### Web Scraping
 
 ```bash
 curl -X POST http://localhost:3001/scrape \
@@ -119,17 +110,32 @@ curl -X POST http://localhost:3001/scrape \
   }'
 ```
 
-### 4. Content Extraction
+---
 
-```bash
-curl -X POST http://localhost:3001/content \
-  -H "Content-Type: application/json" \
-  -d '{"url": "https://github.com", "includeMetadata": true}'
-```
+## ✨ Features
+
+### Core Capabilities
+
+- **📸 Screenshot API** - Full page or element screenshots (PNG, JPEG, WebP)
+- **📄 PDF Generation** - Convert web pages to PDF with custom styling
+- **🔍 Content Extraction** - Extract HTML, text, and metadata
+- **🕷️ Web Scraping** - CSS selector-based data extraction
+- **🔌 WebSocket CDP Proxy** - Direct Puppeteer/Playwright integration
+- **⚡ Browser Pool** - 85% faster with automatic reuse
+- **🔒 Authentication** - JWT + API Key support
+- **📊 Monitoring** - Prometheus metrics built-in
+
+### Enterprise Features
+
+- **Multi-Architecture**: AMD64 and ARM64 support (Apple Silicon, AWS Graviton)
+- **Queue System**: Redis-backed async processing with priority and retry
+- **Session Management**: Auto-cleanup, timeout controls, lifecycle tracking
+- **API Documentation**: Interactive Swagger/OpenAPI docs at `/docs`
+- **Production Ready**: Non-root execution, health checks, resource limits
 
 ---
 
-## 🔌 Integration Examples
+## 🔌 Integration
 
 ### Puppeteer
 
@@ -142,7 +148,6 @@ const browser = await puppeteer.connect({
 
 const page = await browser.newPage();
 await page.goto('https://example.com');
-const screenshot = await page.screenshot();
 await browser.close();
 ```
 
@@ -162,137 +167,15 @@ await browser.close();
 
 ---
 
-## 🔒 Authentication
+## 📊 Performance
 
-### Get Access Token
-
-```bash
-curl -X POST http://localhost:3001/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username": "admin", "password": "admin123"}'
-```
-
-### Use API Key
-
-```bash
-curl -X POST http://localhost:3001/screenshot \
-  -H "X-API-Key: your-api-key" \
-  -d '{"url": "https://example.com"}'
-```
-
-**Default Users:**
-- Admin: `admin` / `admin123`
-- API User: `api-user` / `apiuser123`
-
----
-
-## 📦 Docker Compose Setup
-
-```yaml
-version: '3.8'
-
-services:
-  browser-autos:
-    image: browserautos/chromium:latest
-    ports:
-      - "3001:3001"
-    environment:
-      - JWT_SECRET=your-secret-key
-      - ENABLE_QUEUE=true
-      - REDIS_URL=redis://redis:6379
-    shm_size: '2gb'
-    mem_limit: 4g
-    depends_on:
-      - redis
-
-  redis:
-    image: redis:7-alpine
-    volumes:
-      - redis-data:/data
-
-volumes:
-  redis-data:
-```
-
----
-
-## 📊 Performance Benchmarks
+*Tested on 4 vCPU, 8GB RAM*
 
 | Operation | Cold Start | With Browser Pool | Improvement |
 |-----------|-----------|-------------------|-------------|
 | Screenshot | 7.6s | 1.2s | **85% faster** |
-| PDF Generation | 8.0s | 2.0s | **75% faster** |
-| Content Extraction | 4.5s | 1.5s | **67% faster** |
-
-*Environment: 4 vCPU, 8GB RAM, local development*
-
----
-
-## 🛠️ Development
-
-### Prerequisites
-
-- Node.js 20+
-- Docker (for Redis)
-- Git
-
-### Setup
-
-```bash
-# Clone the repository
-git clone git@github.com:browser-autos/browser-autos.git
-cd browser-autos
-
-# Install backend dependencies
-cd backend
-npm install
-
-# Start Redis
-docker run -d -p 6379:6379 redis:7-alpine
-
-# Start development server
-npm run dev
-
-# API will be available at http://localhost:3001
-```
-
-### Testing
-
-```bash
-# Run all tests
-npm test
-
-# Watch mode
-npm run test:watch
-
-# Coverage report
-npm run test:coverage
-```
-
----
-
-## 📖 Documentation
-
-- [Backend Documentation](./backend/README.md) - Complete API reference
-- [Docker Deployment](./backend/DOCKER_README.md) - Production deployment guide
-- [Testing Guide](./backend/TESTING.md) - Testing strategies and examples
-- [Queue System](./backend/QUEUE_README.md) - Async task processing
-- [API Documentation](http://localhost:3001/docs) - Interactive Swagger UI
-
----
-
-## 🌟 Use Cases
-
-**browser.autos** powers diverse automation workflows:
-
-- 🧪 **CI/CD Testing** - Visual regression testing in your pipeline
-- 📝 **Report Generation** - HTML to PDF conversion at scale
-- 👀 **Web Monitoring** - Track content changes and get alerts
-- 📊 **Data Collection** - Scrape structured data efficiently
-- ✅ **E2E Testing** - Full browser automation for QA
-- 🖼️ **Thumbnail Creation** - Batch webpage screenshot generation
-- 🔍 **SEO Audits** - Crawl and analyze web pages
-- ✓ **Content Verification** - Automated page validation
+| PDF | 8.0s | 2.0s | **75% faster** |
+| Content | 4.5s | 1.5s | **67% faster** |
 
 ---
 
@@ -314,7 +197,6 @@ npm run test:coverage
 │  └──────────┘      └─────────────┘     │
 └───────────────┬─────────────────────────┘
                 │
-                │
 ┌───────────────▼─────────────────────────┐
 │         Business Logic                   │
 │  ┌────────┐  ┌────────┐  ┌──────────┐  │
@@ -323,15 +205,35 @@ npm run test:coverage
 │  └────────┘  └────────┘  └──────────┘  │
 └───────────────┬─────────────────────────┘
                 │
-                │
 ┌───────────────▼─────────────────────────┐
 │       Chrome Instance Pool               │
 │  ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐  │
 │  │Chrome│ │Chrome│ │Chrome│ │Chrome│  │
-│  │  #1  │ │  #2  │ │  #3  │ │  #4  │  │
 │  └──────┘ └──────┘ └──────┘ └──────┘  │
 └──────────────────────────────────────────┘
 ```
+
+---
+
+## 📖 Documentation
+
+- [CLAUDE.MD](./CLAUDE.MD) - Complete developer documentation
+- [DOCKER_README.md](./DOCKER_README.md) - Docker deployment guide
+- [TESTING.md](./TESTING.md) - Testing strategies and examples
+- [QUEUE_README.md](./QUEUE_README.md) - Queue system documentation
+- [Swagger UI](http://localhost:3001/docs) - Interactive API documentation
+
+---
+
+## 🌟 Use Cases
+
+- 🧪 **CI/CD Testing** - Visual regression testing in your pipeline
+- 📝 **Report Generation** - HTML to PDF conversion at scale
+- 👀 **Web Monitoring** - Track content changes and get alerts
+- 📊 **Data Collection** - Scrape structured data efficiently
+- ✅ **E2E Testing** - Full browser automation for QA
+- 🖼️ **Thumbnails** - Batch webpage screenshot generation
+- 🔍 **SEO Audits** - Page analysis and crawling
 
 ---
 
@@ -359,17 +261,6 @@ MIT License - Free for commercial use. See [LICENSE](./LICENSE) for details.
 - 📁 **GitHub**: https://github.com/browser-autos/browser-autos
 - 🐳 **Docker Hub**: https://hub.docker.com/r/browserautos/chromium
 - 🐛 **Issues**: https://github.com/browser-autos/browser-autos/issues
-
----
-
-## ⭐ Support
-
-If you find **browser.autos** useful, please consider:
-
-- ⭐ Starring the [GitHub repository](https://github.com/browser-autos/browser-autos)
-- 🐛 Reporting bugs and feature requests
-- 📖 Contributing to documentation
-- 💬 Sharing your experience
 
 ---
 

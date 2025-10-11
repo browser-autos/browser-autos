@@ -1,394 +1,537 @@
-# Browser.autos CDP API 服务技术文档
+# Browser.autos Backend - 开发文档
 
 ## 项目概述
 
-Browser.autos 是一个基于 Chrome DevTools Protocol (CDP) 的浏览器自动化 API 服务，旨在提供与 [browserless](https://github.com/browserless/browserless) 类似的功能，支持通过 WebSocket 和 REST API 进行无头浏览器控制。
+Browser.autos 是一个基于 Chrome DevTools Protocol (CDP) 的浏览器自动化 API 服务。
 
-**项目特点：**
-- 🚀 支持 Puppeteer 和 Playwright 等主流自动化库
-- 🔌 提供 WebSocket 和 REST API 双重接口
-- 🐳 基于 Docker 容器化部署
-- ⚡ 内置并发控制和请求队列管理
-- 📊 完整的可观测性和监控支持
-- 🔒 企业级安全隔离机制
+**技术栈**：
+- Node.js + TypeScript
+- Fastify (Web 框架)
+- Puppeteer (浏览器控制)
+- Bull + Redis (任务队列)
+- Prometheus (监控指标)
+- Pino (日志)
 
----
+## 已实现功能
 
-## 技术栈选型
+### 1. Screenshot API (截图服务)
+**文件**: `src/api/rest/screenshot.route.ts`, `src/services/screenshot.service.ts`
 
-### 后端服务
+**功能**:
+- 全页面截图
+- 选择器截图
+- 自定义视口
+- 多种格式 (PNG, JPEG, WebP)
+- 质量控制
 
-基于对 browserless 的调研，推荐使用以下技术栈：
+**端点**: `POST /screenshot`
 
-#### **核心语言：TypeScript + Node.js**
+### 2. PDF API (PDF 生成)
+**文件**: `src/api/rest/pdf.route.ts`, `src/services/pdf.service.ts`
 
-**选择理由：**
-1. **生态兼容性**：Puppeteer 和 Playwright 都是 Node.js 原生库，无缝集成
-2. **CDP 协议支持**：Node.js 对 WebSocket 和 CDP 协议支持成熟
-3. **类型安全**：TypeScript 提供强类型检查，提高代码质量
-4. **社区支持**：browserless 官方项目使用 TypeScript 开发（92.2% TypeScript）
-5. **开发效率**：前后端统一语言栈，降低学习成本
+**功能**:
+- 网页转 PDF
+- 自定义页面大小
+- 横向/纵向
+- 打印背景
+- 页边距设置
 
-#### **框架和库**
+**端点**: `POST /pdf`
 
-| 组件 | 技术选型 | 用途 |
-|------|---------|------|
-| **Web 框架** | Fastify 或 Express | HTTP 服务器和路由 |
-| **WebSocket** | ws 库 | CDP 协议 WebSocket 代理 |
-| **浏览器控制** | Puppeteer Core | 无头浏览器控制 |
-| **队列管理** | Bull / BullMQ | 请求队列和并发控制 |
-| **消息队列** | Redis | 任务队列后端存储 |
-| **日志** | Pino | 高性能结构化日志 |
-| **监控** | Prometheus Client | 指标采集和监控 |
-| **容器** | Docker | 服务容器化 |
+### 3. Content API (内容提取)
+**文件**: `src/api/rest/content.route.ts`, `src/services/content.service.ts`
 
----
+**功能**:
+- HTML 提取
+- 纯文本提取
+- 链接提取
+- 图片提取
+- 元数据提取
 
-## 架构设计
+**端点**: `POST /content`
 
-### 整体架构图
+### 4. Scrape API (数据爬取)
+**文件**: `src/api/rest/scrape.route.ts`, `src/services/scrape.service.ts`
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                       客户端层                           │
-│  Puppeteer / Playwright / REST API Clients              │
-└────────────────┬────────────────────────────────────────┘
-                 │
-                 │ WebSocket / HTTP
-                 │
-┌────────────────▼────────────────────────────────────────┐
-│                    API Gateway 层                        │
-│  ┌──────────────┐          ┌─────────────┐             │
-│  │ WebSocket    │          │  REST API   │             │
-│  │ Proxy Server │          │  Endpoints  │             │
-│  └──────────────┘          └─────────────┘             │
-└────────────────┬────────────────────────────────────────┘
-                 │
-                 │
-┌────────────────▼────────────────────────────────────────┐
-│                   业务逻辑层                             │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐ │
-│  │ Session      │  │ Queue        │  │ Task         │ │
-│  │ Manager      │  │ Manager      │  │ Executor     │ │
-│  └──────────────┘  └──────────────┘  └──────────────┘ │
-└────────────────┬────────────────────────────────────────┘
-                 │
-                 │
-┌────────────────▼────────────────────────────────────────┐
-│                   Chrome 实例池                          │
-│  ┌──────┐  ┌──────┐  ┌──────┐  ┌──────┐  ┌──────┐    │
-│  │Chrome│  │Chrome│  │Chrome│  │Chrome│  │Chrome│    │
-│  │  #1  │  │  #2  │  │  #3  │  │  #4  │  │  #5  │    │
-│  └──────┘  └──────┘  └──────┘  └──────┘  └──────┘    │
-└─────────────────────────────────────────────────────────┘
-```
+**功能**:
+- CSS 选择器爬取
+- 批量元素提取
+- 自定义等待
+- 超时控制
 
-### 核心模块说明
+**端点**: `POST /scrape`
 
-#### 1. **API Gateway 层**
+### 5. Browser Pool (浏览器池)
+**文件**: `src/core/browser/BrowserPool.ts`
 
-**WebSocket Proxy Server**
-- 监听客户端 WebSocket 连接请求
-- 验证 Token 和权限
-- 创建新的 Chrome 实例并建立 CDP 连接
-- 代理客户端消息到 Chrome 实例
-- 支持多租户隔离
+**功能**:
+- 浏览器实例池化
+- 自动启动/关闭
+- 资源复用
+- 健康检查
+- 最大存活时间控制
 
-**REST API Endpoints**
-```typescript
-// 核心 REST API 端点
-POST   /screenshot    // 网页截图
-POST   /pdf           // 生成 PDF
-POST   /content       // 获取页面内容
-POST   /scrape        // 数据抓取
-GET    /health        // 健康检查
-GET    /metrics       // Prometheus 指标
-GET    /sessions      // 活跃会话列表
-DELETE /sessions/:id  // 关闭指定会话
-```
+**特性**:
+- 最小实例数：1-2
+- 最大实例数：10
+- 最大存活时间：1小时
 
-#### 2. **Session Manager（会话管理器）**
+### 6. Prometheus Metrics (监控指标)
+**文件**: `src/utils/metrics.ts`
 
-```typescript
-interface SessionConfig {
-  id: string;
-  userId: string;
-  maxDuration: number;      // 最大存活时间
-  timeout: number;          // 空闲超时
-  browserArgs: string[];    // Chrome 启动参数
-  viewport: { width: number; height: number };
-}
+**指标**:
+- HTTP 请求统计
+- 浏览器池状态
+- 任务执行时间
+- 会话统计
+- 队列统计
 
-class SessionManager {
-  async createSession(config: SessionConfig): Promise<Session>
-  async getSession(sessionId: string): Promise<Session | null>
-  async closeSession(sessionId: string): Promise<void>
-  async cleanupIdleSessions(): Promise<void>
-  getActiveSessions(): Session[]
-}
-```
+**端点**: `GET /metrics`
 
-#### 3. **Queue Manager（队列管理器）**
+### 7. WebSocket Proxy (WebSocket 代理)
+**文件**: `src/api/websocket/proxy.route.ts`
 
-```typescript
-interface QueueConfig {
-  maxConcurrent: number;    // 最大并发数
-  timeout: number;          // 任务超时时间
-  retries: number;          // 重试次数
-  priority: 'high' | 'normal' | 'low';
-}
+**功能**:
+- CDP WebSocket 代理
+- 会话管理集成
+- 双向消息转发
+- 自动清理
 
-class QueueManager {
-  async addTask<T>(task: Task<T>, config: QueueConfig): Promise<T>
-  async getQueueStatus(): Promise<QueueStatus>
-  async pauseQueue(): Promise<void>
-  async resumeQueue(): Promise<void>
-}
-```
+**端点**: `GET /ws`
 
-#### 4. **Browser Pool（浏览器池）**
+### 8. Session Manager (会话管理)
+**文件**: `src/core/session/SessionManager.ts`
 
-```typescript
-interface BrowserPoolConfig {
-  minInstances: number;     // 最小实例数
-  maxInstances: number;     // 最大实例数
-  maxAge: number;           // 实例最大存活时间
-  launchOptions: PuppeteerLaunchOptions;
-}
+**功能**:
+- 会话生命周期管理
+- 自动超时清理（5分钟空闲）
+- 最大持续时间控制（1小时）
+- 事件系统
+- 统计信息
 
-class BrowserPool {
-  async acquire(): Promise<Browser>
-  async release(browser: Browser): Promise<void>
-  async drain(): Promise<void>
-  getPoolStats(): PoolStats
-}
-```
+**端点**:
+- `GET /sessions` - 获取所有会话
+- `GET /sessions/:id` - 获取会话详情
+- `DELETE /sessions/:id` - 关闭会话
+- `GET /sessions/stats` - 获取统计信息
 
----
+**特性**:
+- 每 30 秒自动清理空闲会话
+- 集成 Prometheus 监控
+- EventEmitter 事件系统
 
-## 项目目录结构
+### 9. Queue Manager (队列管理器)
+**文件**:
+- `src/core/queue/QueueManager.ts`
+- `src/core/queue/TaskProcessor.ts`
+- `src/api/rest/queue.route.ts`
 
-```
-browser.autos/
-├── frontend/                 # Next.js 前端（已完成）
-│   ├── src/
-│   │   ├── app/
-│   │   ├── components/
-│   │   └── contexts/
-│   └── package.json
-│
-├── backend/                  # 后端 API 服务（待开发）
-│   ├── src/
-│   │   ├── api/             # API 路由和控制器
-│   │   │   ├── websocket/   # WebSocket 处理
-│   │   │   ├── rest/        # REST API 端点
-│   │   │   └── middleware/  # 中间件（认证、限流等）
-│   │   │
-│   │   ├── core/            # 核心业务逻辑
-│   │   │   ├── session/     # 会话管理
-│   │   │   ├── queue/       # 队列管理
-│   │   │   ├── browser/     # 浏览器池管理
-│   │   │   └── executor/    # 任务执行器
-│   │   │
-│   │   ├── services/        # 业务服务
-│   │   │   ├── screenshot.service.ts
-│   │   │   ├── pdf.service.ts
-│   │   │   ├── scraping.service.ts
-│   │   │   └── cdp.service.ts
-│   │   │
-│   │   ├── utils/           # 工具函数
-│   │   │   ├── logger.ts
-│   │   │   ├── metrics.ts
-│   │   │   └── validation.ts
-│   │   │
-│   │   ├── types/           # TypeScript 类型定义
-│   │   │   ├── api.types.ts
-│   │   │   ├── session.types.ts
-│   │   │   └── queue.types.ts
-│   │   │
-│   │   ├── config/          # 配置管理
-│   │   │   └── index.ts
-│   │   │
-│   │   └── index.ts         # 入口文件
-│   │
-│   ├── tests/               # 测试文件
-│   │   ├── unit/
-│   │   ├── integration/
-│   │   └── e2e/
-│   │
-│   ├── Dockerfile           # Docker 配置
-│   ├── tsconfig.json        # TypeScript 配置
-│   ├── package.json
-│   └── .env.example
-│
-├── docker-compose.yml       # Docker Compose 配置
-├── .github/                 # GitHub Actions CI/CD
-│   └── workflows/
-│       └── deploy.yml
-│
-└── docs/                    # 文档
-    ├── API.md               # API 文档
-    ├── DEPLOYMENT.md        # 部署文档
-    └── DEVELOPMENT.md       # 开发文档
-```
+**功能**:
+- 异步任务处理
+- 优先级队列（CRITICAL, HIGH, NORMAL, LOW）
+- 自动重试（指数退避）
+- 并发控制（默认 5）
+- 任务生命周期管理
+- 事件系统
+- Prometheus 集成
 
----
+**端点**:
+- `POST /queue/tasks` - 添加任务
+- `GET /queue/tasks/:id` - 获取任务状态
+- `DELETE /queue/tasks/:id` - 取消任务
+- `POST /queue/tasks/:id/retry` - 重试任务
+- `GET /queue/stats` - 队列统计
+- `GET /queue/status` - 队列状态
+- `GET /queue/tasks` - 任务列表
+- `POST /queue/pause` - 暂停队列
+- `POST /queue/resume` - 恢复队列
+- `DELETE /queue/clean` - 清理队列
 
-## API 设计
+**任务类型**:
+- SCREENSHOT - 截图任务
+- PDF - PDF 生成任务
+- CONTENT - 内容提取任务
+- SCRAPE - 数据爬取任务
+- CUSTOM - 自定义任务
 
-### WebSocket API
+**文档**:
+- `QUEUE_README.md` - 完整文档
+- `QUEUE_TESTING.md` - 测试指南
 
-#### 连接端点
+### 10. Authentication System (认证系统)
+**文件**:
+- `src/services/auth.service.ts` - JWT token 服务
+- `src/services/user.service.ts` - 用户和 API Key 管理
+- `src/middleware/auth.middleware.ts` - 认证中间件
+- `src/api/rest/auth.route.ts` - 认证 API
+- `src/types/auth.types.ts` - 认证类型定义
 
-```
-ws://localhost:3000?token=YOUR_TOKEN
-ws://localhost:3000/chrome?token=YOUR_TOKEN
-ws://localhost:3000/firefox?token=YOUR_TOKEN
-```
+**功能**:
+- JWT Token 认证（Access Token + Refresh Token）
+- API Key 认证
+- 用户角色管理（Admin, User, Service）
+- API Key 权限控制
+- Token 自动刷新
+- 多种认证方式组合
 
-#### 连接流程
+**端点**:
+- `POST /auth/login` - 用户登录
+- `POST /auth/refresh` - 刷新 Token
+- `GET /auth/me` - 获取当前用户信息
+- `GET /auth/api-keys` - 获取 API Keys
+- `POST /auth/api-keys` - 创建 API Key
+- `DELETE /auth/api-keys/:id` - 删除 API Key
+- `POST /auth/api-keys/:id/revoke` - 撤销 API Key
+- `GET /auth/users` - 获取所有用户（管理员）
 
-```typescript
-// 客户端示例（Puppeteer）
-import puppeteer from 'puppeteer-core';
+**认证方式**:
+1. **JWT Token** - Bearer Token 在 Authorization header
+   ```bash
+   curl -H "Authorization: Bearer <token>" http://localhost:3001/api
+   ```
 
-const browser = await puppeteer.connect({
-  browserWSEndpoint: 'ws://localhost:3000?token=YOUR_TOKEN'
-});
+2. **API Key** - 通过 X-API-Key header 或 query 参数
+   ```bash
+   curl -H "X-API-Key: <api-key>" http://localhost:3001/api
+   # 或
+   curl http://localhost:3001/api?apiKey=<api-key>
+   ```
 
-const page = await browser.newPage();
-await page.goto('https://example.com');
-const screenshot = await page.screenshot();
-await browser.close();
-```
+**默认用户**:
+- **管理员**: `admin` / `admin123`
+- **API 用户**: `api-user` / `apiuser123`
 
-### REST API
+**特性**:
+- Access Token 有效期：30天
+- Refresh Token 有效期：90天
+- API Key 格式：`ba_test_*` (开发) / `ba_live_*` (生产)
+- 支持自定义权限和过期时间
+- 集成 Prometheus 监控
 
-#### 1. 截图 API
+### 11. Docker Deployment (Docker 部署) ✨ 最新实现
+**文件**:
+- `Dockerfile` - 多阶段构建配置
+- `docker-compose.prod.yml` - 生产环境编排
+- `.dockerignore` - Docker 忽略文件
+- `prometheus.yml` - Prometheus 配置
+- `.env.production.example` - 生产环境变量模板
 
-```http
-POST /screenshot
-Content-Type: application/json
-Authorization: Bearer YOUR_TOKEN
+**功能**:
+- 多阶段构建优化镜像大小（~500MB）
+- 完整的生产环境编排
+- 健康检查和自动重启
+- 资源限制配置
+- 数据持久化
 
-{
-  "url": "https://example.com",
-  "fullPage": true,
-  "viewport": {
-    "width": 1920,
-    "height": 1080
-  },
-  "format": "png",
-  "quality": 90
-}
+**服务组件**:
+- **API 服务**: 主应用服务
+- **Redis**: 任务队列和缓存
+- **Prometheus**: 指标收集
+- **Grafana**: 监控可视化
 
-Response: image/png (binary)
-```
-
-#### 2. PDF 生成 API
-
-```http
-POST /pdf
-Content-Type: application/json
-Authorization: Bearer YOUR_TOKEN
-
-{
-  "url": "https://example.com",
-  "format": "A4",
-  "printBackground": true,
-  "margin": {
-    "top": "1cm",
-    "right": "1cm",
-    "bottom": "1cm",
-    "left": "1cm"
-  }
-}
-
-Response: application/pdf (binary)
-```
-
-#### 3. 内容抓取 API
-
-```http
-POST /scrape
-Content-Type: application/json
-Authorization: Bearer YOUR_TOKEN
-
-{
-  "url": "https://example.com",
-  "elements": [
-    {
-      "selector": "h1",
-      "property": "textContent"
-    },
-    {
-      "selector": ".price",
-      "property": "textContent"
-    }
-  ],
-  "waitUntil": "networkidle0"
-}
-
-Response:
-{
-  "data": [
-    { "selector": "h1", "value": "Example Title" },
-    { "selector": ".price", "value": "$99.99" }
-  ],
-  "timestamp": "2025-10-11T10:30:00Z"
-}
-```
-
-#### 4. 健康检查 API
-
-```http
-GET /health
-
-Response:
-{
-  "status": "healthy",
-  "uptime": 3600,
-  "activeSessions": 5,
-  "queueLength": 2,
-  "browserPool": {
-    "active": 5,
-    "idle": 3,
-    "max": 10
-  }
-}
-```
-
----
-
-## 配置管理
-
-### 环境变量配置
-
+**快速开始**:
 ```bash
-# .env.example
+# 1. 复制环境变量模板
+cp .env.production.example .env.production
 
+# 2. 修改必要的配置（JWT_SECRET, 密码等）
+nano .env.production
+
+# 3. 启动所有服务
+docker-compose -f docker-compose.prod.yml --env-file .env.production up -d
+
+# 4. 查看服务状态
+docker-compose -f docker-compose.prod.yml ps
+
+# 5. 查看日志
+docker-compose -f docker-compose.prod.yml logs -f api
+```
+
+**特性**:
+- 非 root 用户运行（安全）
+- 自动健康检查
+- 资源限制（CPU/Memory）
+- 持久化数据卷
+- 完整监控栈
+
+**文档**:
+- `DOCKER_README.md` - 完整Docker 部署指南
+
+### 12. API Documentation (API 文档) ✨ 最新实现
+**文件**:
+- `src/config/swagger.ts` - Swagger/OpenAPI 配置
+- `src/server.ts` - Swagger 插件集成
+
+**功能**:
+- 交互式 API 文档
+- OpenAPI 3.x 规范
+- 完整的 API 端点文档
+- 请求/响应模式定义
+- 在线 API 测试
+
+**端点**: `GET /docs` - Swagger UI 交互式文档
+
+**特性**:
+- **API 分类**: 8 个 API 标签分类
+  - Health - 健康检查和系统信息
+  - Auth - 认证和授权
+  - Screenshot - 截图操作
+  - PDF - PDF 生成
+  - Content - 内容提取
+  - Scrape - 数据爬取
+  - Sessions - 会话管理
+  - Queue - 队列管理
+
+- **认证方案**:
+  - Bearer Auth (JWT Token)
+  - API Key (X-API-Key header)
+
+- **通用模式**:
+  - SuccessResponse - 成功响应格式
+  - ErrorResponse - 错误响应格式
+  - 各 API 的请求/响应模式
+
+- **UI 配置**:
+  - 文档展开模式
+  - 深度链接支持
+  - 请求时长显示
+  - 过滤功能
+  - 在线测试功能
+
+**访问方式**:
+```bash
+# 浏览器访问
+open http://localhost:3001/docs
+
+# 获取 OpenAPI JSON 规范
+curl http://localhost:3001/docs/json
+```
+
+### 13. Testing Suite (测试套件)
+**文件**:
+- `jest.config.js` - Jest 测试配置
+- `tests/setup.ts` - 测试环境设置
+- `tests/helpers/` - 测试辅助函数
+  - `testServer.ts` - 服务器测试辅助
+  - `testAuth.ts` - 认证测试辅助
+  - `testBrowser.ts` - 浏览器 mock 辅助
+- `tests/unit/` - 单元测试
+  - `auth.service.test.ts` - AuthService 单元测试
+  - `user.service.test.ts` - UserService 单元测试
+- `tests/integration/` - 集成测试
+  - `auth.api.test.ts` - 认证 API 集成测试
+  - `health.api.test.ts` - 健康检查 API 集成测试
+- `tests/e2e/` - 端到端测试
+  - `authentication-flow.test.ts` - 完整认证流程 E2E 测试
+
+**功能**:
+- 单元测试（Service 层）
+- 集成测试（API 端点）
+- E2E 测试（完整业务流程）
+- 测试覆盖率报告
+- 自动化测试运行
+
+**测试框架**:
+- **Jest**: 测试运行器
+- **ts-jest**: TypeScript 支持
+- **Supertest**: HTTP 断言
+
+**运行测试**:
+```bash
+# 运行所有测试
+npm test
+
+# Watch 模式
+npm run test:watch
+
+# 生成覆盖率报告
+npm run test:coverage
+```
+
+**覆盖率要求**:
+- 分支覆盖率: ≥70%
+- 函数覆盖率: ≥70%
+- 行覆盖率: ≥70%
+- 语句覆盖率: ≥70%
+
+**测试类型**:
+1. **单元测试**: 测试独立的函数和类
+2. **集成测试**: 测试 API 端点和路由
+3. **E2E 测试**: 测试完整的用户流程
+
+**特性**:
+- 自动 mock 浏览器实例
+- 测试数据构建器
+- 认证测试辅助函数
+- 测试服务器生命周期管理
+- 覆盖率阈值检查
+
+**文档**:
+- `TESTING.md` - 完整测试指南
+
+## Docker 服务搭建
+
+### Redis (队列所需)
+
+Queue Manager 需要 Redis 来存储任务队列。
+
+**方式 1: Docker 运行**
+```bash
+# 启动 Redis
+docker run -d \
+  --name browser-autos-redis \
+  -p 6379:6379 \
+  -v redis-data:/data \
+  redis:7-alpine redis-server --appendonly yes
+
+# 停止
+docker stop browser-autos-redis
+
+# 删除
+docker rm browser-autos-redis
+```
+
+**方式 2: Docker Compose**
+
+创建 `docker-compose.yml`:
+```yaml
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: browser-autos-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+volumes:
+  redis-data:
+```
+
+启动服务:
+```bash
+# 启动
+docker-compose up -d
+
+# 查看日志
+docker-compose logs -f redis
+
+# 停止
+docker-compose down
+
+# 停止并删除数据
+docker-compose down -v
+```
+
+**验证 Redis 运行**:
+```bash
+# 测试连接
+redis-cli ping
+# 应该返回: PONG
+
+# 或使用 Docker
+docker exec -it browser-autos-redis redis-cli ping
+```
+
+### 未来可能需要的服务
+
+#### PostgreSQL (如果需要持久化存储)
+```yaml
+  postgres:
+    image: postgres:15-alpine
+    container_name: browser-autos-postgres
+    environment:
+      POSTGRES_DB: browser_autos
+      POSTGRES_USER: browser_autos
+      POSTGRES_PASSWORD: your_password_here
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+```
+
+#### Prometheus (监控)
+```yaml
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: browser-autos-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    restart: unless-stopped
+```
+
+`prometheus.yml`:
+```yaml
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'browser-autos'
+    static_configs:
+      - targets: ['host.docker.internal:3001']
+```
+
+#### Grafana (监控可视化)
+```yaml
+  grafana:
+    image: grafana/grafana:latest
+    container_name: browser-autos-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GFX_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana-data:/var/lib/grafana
+    restart: unless-stopped
+```
+
+## 环境变量配置
+
+创建 `.env` 文件:
+
+```env
 # 服务配置
-PORT=3000
-NODE_ENV=production
+NODE_ENV=development
+PORT=3001
+HOST=0.0.0.0
 LOG_LEVEL=info
 
-# 认证
-JWT_SECRET=your-secret-key
+# 认证配置
+JWT_SECRET=your-secret-key-change-in-production
 TOKEN_EXPIRY=30d
 
 # Chrome 配置
-MAX_CONCURRENT_SESSIONS=10
-SESSION_TIMEOUT=300000        # 5分钟
-MAX_SESSION_DURATION=3600000  # 1小时
-CHROME_EXECUTABLE_PATH=/usr/bin/chromium
+MAX_CONCURRENT_SESSIONS=5
+SESSION_TIMEOUT=300000
+MAX_SESSION_DURATION=3600000
+# CHROME_EXECUTABLE_PATH=/path/to/chrome
 
 # 浏览器池配置
 BROWSER_POOL_MIN=2
 BROWSER_POOL_MAX=10
 BROWSER_MAX_AGE=3600000
 
-# 队列配置
+# Redis 配置
 REDIS_URL=redis://localhost:6379
+
+# 队列配置
+QUEUE_NAME=browser-tasks
 QUEUE_MAX_CONCURRENT=5
 QUEUE_TIMEOUT=120000
 QUEUE_RETRIES=3
@@ -398,835 +541,330 @@ ENABLE_METRICS=true
 METRICS_PORT=9090
 
 # 资源限制
-MAX_MEMORY_PER_BROWSER=512     # MB
-MAX_CPU_PER_BROWSER=50         # %
+MAX_MEMORY_PER_BROWSER=512
+MAX_CPU_PER_BROWSER=50
+
+# 速率限制
+RATE_LIMIT_WINDOW=900000
+RATE_LIMIT_MAX=100
+
+# CORS 配置
+CORS_ORIGIN=*
+CORS_CREDENTIALS=true
 ```
 
----
+## 开发流程
 
-## Docker 部署
+### 1. 启动依赖服务
 
-### Dockerfile
+```bash
+# 启动 Redis
+docker-compose up -d redis
 
-```dockerfile
-# 基础镜像使用官方 Node.js 镜像
-FROM node:20-bookworm-slim
+# 验证 Redis
+docker-compose ps
+docker-compose logs redis
+```
 
-# 安装 Chrome 依赖
-RUN apt-get update && apt-get install -y \
-    chromium \
-    chromium-driver \
-    fonts-liberation \
-    fonts-noto-color-emoji \
-    libappindicator3-1 \
-    libasound2 \
-    libatk-bridge2.0-0 \
-    libatk1.0-0 \
-    libcups2 \
-    libdbus-1-3 \
-    libdrm2 \
-    libgbm1 \
-    libgtk-3-0 \
-    libnspr4 \
-    libnss3 \
-    libx11-xcb1 \
-    libxcomposite1 \
-    libxdamage1 \
-    libxrandr2 \
-    xdg-utils \
-    && rm -rf /var/lib/apt/lists/*
+### 2. 安装依赖
 
-# 设置工作目录
-WORKDIR /app
+```bash
+npm install
+```
 
-# 复制依赖文件
-COPY backend/package*.json ./
+### 3. 启动开发服务器
 
-# 安装依赖
-RUN npm ci --only=production
+```bash
+npm run dev
+```
 
-# 复制源代码
-COPY backend/src ./src
-COPY backend/tsconfig.json ./
+### 4. 验证服务
 
-# 构建 TypeScript
-RUN npm run build
-
-# 创建非 root 用户
-RUN useradd -m -u 1001 browserless && \
-    chown -R browserless:browserless /app
-
-USER browserless
-
-# 暴露端口
-EXPOSE 3000 9090
-
+```bash
 # 健康检查
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
+curl http://localhost:3001/health
 
-# 启动服务
-CMD ["node", "dist/index.js"]
+# API 信息
+curl http://localhost:3001/
+
+# Prometheus 指标
+curl http://localhost:3001/metrics
 ```
 
-### docker-compose.yml
+## API 测试
 
-```yaml
-version: '3.8'
+### 认证 API 测试
 
-services:
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis-data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 3s
-      retries: 3
+```bash
+# 1. 用户登录
+curl -X POST http://localhost:3001/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "admin",
+    "password": "admin123"
+  }'
 
-  browser-api:
-    build:
-      context: .
-      dockerfile: backend/Dockerfile
-    ports:
-      - "3000:3000"
-      - "9090:9090"
-    environment:
-      - NODE_ENV=production
-      - REDIS_URL=redis://redis:6379
-      - MAX_CONCURRENT_SESSIONS=10
-      - LOG_LEVEL=info
-    depends_on:
-      redis:
-        condition: service_healthy
-    volumes:
-      - /dev/shm:/dev/shm
-    deploy:
-      resources:
-        limits:
-          memory: 4G
-          cpus: '2'
-        reservations:
-          memory: 2G
-          cpus: '1'
-    restart: unless-stopped
+# 2. 获取当前用户信息（使用 JWT）
+curl http://localhost:3001/auth/me \
+  -H "Authorization: Bearer <access_token>"
 
-  prometheus:
-    image: prom/prometheus:latest
-    ports:
-      - "9091:9090"
-    volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus-data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
+# 3. 创建 API Key
+curl -X POST http://localhost:3001/auth/api-keys \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <access_token>" \
+  -d '{
+    "name": "My API Key",
+    "permissions": ["screenshot", "pdf"],
+    "expiresIn": 30
+  }'
 
-volumes:
-  redis-data:
-  prometheus-data:
+# 4. 使用 API Key 访问 API
+curl -X POST http://localhost:3001/screenshot \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: <api_key>" \
+  -d '{
+    "url": "https://example.com",
+    "fullPage": true
+  }' \
+  --output screenshot.png
+
+# 5. 刷新 Token
+curl -X POST http://localhost:3001/auth/refresh \
+  -H "Content-Type: application/json" \
+  -d '{
+    "refreshToken": "<refresh_token>"
+  }'
+
+# 6. 获取所有 API Keys
+curl http://localhost:3001/auth/api-keys \
+  -H "Authorization: Bearer <access_token>"
 ```
 
----
+### 队列 API 测试
 
-## 监控和可观测性
+```bash
+# 1. 添加截图任务
+curl -X POST http://localhost:3001/queue/tasks \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "screenshot",
+    "url": "https://example.com",
+    "priority": 5,
+    "fullPage": true,
+    "format": "png"
+  }'
+
+# 2. 查看队列统计
+curl http://localhost:3001/queue/stats
+
+# 3. 查看活跃任务
+curl http://localhost:3001/queue/tasks?status=active
+
+# 4. 查看队列状态
+curl http://localhost:3001/queue/status
+```
+
+### 会话 API 测试
+
+```bash
+# 查看所有会话
+curl http://localhost:3001/sessions
+
+# 查看会话统计
+curl http://localhost:3001/sessions/stats
+```
+
+### 截图 API 测试
+
+```bash
+curl -X POST http://localhost:3001/screenshot \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://example.com",
+    "fullPage": true
+  }' \
+  --output screenshot.png
+```
+
+## 项目结构
+
+```
+backend/
+├── src/
+│   ├── api/
+│   │   ├── rest/           # REST API 路由
+│   │   │   ├── auth.route.ts
+│   │   │   ├── screenshot.route.ts
+│   │   │   ├── pdf.route.ts
+│   │   │   ├── content.route.ts
+│   │   │   ├── scrape.route.ts
+│   │   │   ├── session.route.ts
+│   │   │   └── queue.route.ts
+│   │   └── websocket/      # WebSocket 路由
+│   │       └── proxy.route.ts
+│   ├── config/             # 配置管理
+│   │   └── index.ts
+│   ├── core/               # 核心功能
+│   │   ├── browser/
+│   │   │   └── BrowserPool.ts
+│   │   ├── session/
+│   │   │   └── SessionManager.ts
+│   │   └── queue/
+│   │       ├── QueueManager.ts
+│   │       ├── TaskProcessor.ts
+│   │       └── index.ts
+│   ├── middleware/         # 中间件
+│   │   └── auth.middleware.ts
+│   ├── services/           # 业务服务
+│   │   ├── auth.service.ts
+│   │   ├── user.service.ts
+│   │   ├── screenshot.service.ts
+│   │   ├── pdf.service.ts
+│   │   ├── content.service.ts
+│   │   └── scrape.service.ts
+│   ├── types/              # 类型定义
+│   │   ├── auth.types.ts
+│   │   ├── session.types.ts
+│   │   └── queue.types.ts
+│   ├── utils/              # 工具函数
+│   │   ├── logger.ts
+│   │   └── metrics.ts
+│   ├── index.ts            # 应用入口
+│   └── server.ts           # 服务器配置
+├── docker-compose.yml      # Docker 编排
+├── QUEUE_README.md         # 队列文档
+├── QUEUE_TESTING.md        # 队列测试指南
+└── CLAUDE.MD              # 本文档
+```
+
+## 性能指标
+
+### 浏览器池
+- 实例复用率: 高
+- 启动时间: ~1秒
+- 最大并发: 10
+
+### 任务处理
+- 截图平均时间: 1-3秒
+- PDF 生成时间: 2-5秒
+- 内容提取时间: 1-2秒
+- 数据爬取时间: 1-3秒
+
+### 队列
+- 默认并发: 5
+- 自动重试: 3次
+- 退避策略: 指数（2秒起）
+
+## 监控
 
 ### Prometheus 指标
 
-```typescript
-// 自定义指标
-export const metrics = {
-  httpRequestsTotal: new Counter({
-    name: 'http_requests_total',
-    help: 'Total HTTP requests',
-    labelNames: ['method', 'path', 'status']
-  }),
+**HTTP 请求**:
+- `browser_autos_http_requests_total`
+- `browser_autos_http_request_duration_seconds`
 
-  activeSessionsGauge: new Gauge({
-    name: 'active_sessions',
-    help: 'Number of active browser sessions'
-  }),
+**浏览器池**:
+- `browser_autos_browser_pool_size{state}`
+- `browser_autos_browser_pool_use_count_total`
 
-  queueLengthGauge: new Gauge({
-    name: 'queue_length',
-    help: 'Number of tasks in queue'
-  }),
+**任务**:
+- `browser_autos_task_duration_seconds`
+- `browser_autos_task_total`
 
-  taskDurationHistogram: new Histogram({
-    name: 'task_duration_seconds',
-    help: 'Task execution duration',
-    labelNames: ['task_type'],
-    buckets: [0.1, 0.5, 1, 2, 5, 10, 30]
-  }),
+**会话**:
+- `browser_autos_sessions{status}`
+- `browser_autos_session_duration_seconds`
+- `browser_autos_session_total`
 
-  browserPoolGauge: new Gauge({
-    name: 'browser_pool_size',
-    help: 'Browser pool metrics',
-    labelNames: ['state'] // active, idle
-  })
-};
-```
+**队列**:
+- `browser_autos_queue_tasks{status}`
+- `browser_autos_queue_length`
 
-### 日志结构
+## 下一步开发计划
 
-```typescript
-// 使用 Pino 结构化日志
-import pino from 'pino';
+根据项目规划，接下来需要实现：
 
-const logger = pino({
-  level: process.env.LOG_LEVEL || 'info',
-  transport: {
-    target: 'pino-pretty',
-    options: {
-      colorize: true,
-      translateTime: 'SYS:standard'
-    }
-  }
-});
+### 1. 性能优化 ⬅️ 下一步
+- 缓存策略
+- 连接池优化
+- 并发控制优化
+- 响应时间优化
 
-// 日志示例
-logger.info({
-  sessionId: 'xxx',
-  userId: 'yyy',
-  duration: 1234
-}, 'Session closed');
-```
+### 2. 生产环境监控
+- Grafana 仪表板配置
+- 告警规则设置
+- 性能基准测试
 
----
+## 常见问题
 
-## 安全性设计
-
-### 1. Token 认证
-
-```typescript
-// JWT Token 验证
-import jwt from 'jsonwebtoken';
-
-interface TokenPayload {
-  userId: string;
-  tier: 'free' | 'pro' | 'enterprise';
-  rateLimit: number;
-}
-
-function verifyToken(token: string): TokenPayload {
-  return jwt.verify(token, process.env.JWT_SECRET!) as TokenPayload;
-}
-```
-
-### 2. 速率限制
-
-```typescript
-// 基于 Redis 的速率限制
-import rateLimit from 'express-rate-limit';
-import RedisStore from 'rate-limit-redis';
-
-const limiter = rateLimit({
-  store: new RedisStore({
-    client: redisClient
-  }),
-  windowMs: 15 * 60 * 1000,  // 15分钟
-  max: 100,                   // 最多 100 个请求
-  message: 'Too many requests'
-});
-```
-
-### 3. 容器隔离
-
-- 每个浏览器实例运行在独立的沙箱环境
-- 使用 Docker seccomp 和 AppArmor 配置
-- 限制系统调用和文件访问权限
-
-### 4. 资源限制
-
-```typescript
-// Chrome 启动参数
-const browserArgs = [
-  '--no-sandbox',
-  '--disable-setuid-sandbox',
-  '--disable-dev-shm-usage',
-  '--disable-gpu',
-  '--disable-software-rasterizer',
-  `--max-old-space-size=${MAX_MEMORY}`,
-  '--disable-background-networking',
-  '--disable-background-timer-throttling'
-];
-```
-
----
-
-## 开发路线图
-
-### Phase 1: 核心功能开发（2-3周）
-
-- [x] 项目初始化和基础架构搭建
-  - [x] 创建后端目录结构
-  - [x] 配置 TypeScript 和构建工具
-  - [x] 实现 Logger 工具类
-  - [x] 实现配置管理模块
-  - [x] 定义完整的 TypeScript 类型系统
-  - [x] 创建基础 Fastify 服务器
-- [ ] WebSocket 代理服务器实现
-- [ ] 会话管理器开发
-- [ ] 浏览器池管理
-- [ ] REST API 基础端点（screenshot, pdf, content）
-- [ ] Token 认证和授权
-
-### Phase 2: 高级功能开发（2-3周）
-
-- [ ] 队列管理和并发控制
-- [ ] 数据抓取服务
-- [ ] Webhook 回调支持
-- [ ] 重试机制和错误处理
-- [ ] 日志和监控集成
-- [ ] API 文档生成（Swagger/OpenAPI）
-
-### Phase 3: 生产优化（1-2周）
-
-- [ ] 性能优化和压力测试
-- [ ] Docker 镜像优化
-- [ ] CI/CD 流程建立
-- [ ] 安全加固
-- [ ] 前后端集成测试
-- [ ] 用户文档编写
-
-### Phase 4: 扩展功能（可选）
-
-- [ ] 多浏览器支持（Firefox, WebKit）
-- [ ] 分布式部署支持
-- [ ] Kubernetes Helm Chart
-- [ ] GraphQL API 支持
-- [ ] 实时 WebSocket 推送
-- [ ] 浏览器录制回放功能
-
----
-
-## 性能基准
-
-### 目标性能指标
-
-| 指标 | 目标值 | 说明 |
-|------|--------|------|
-| API 响应时间（P95） | < 500ms | 不含浏览器渲染时间 |
-| 浏览器启动时间 | < 2s | 冷启动到可用 |
-| 最大并发会话 | 50+ | 单实例支持 |
-| 内存占用 | < 4GB | 10个并发会话 |
-| 截图生成速度 | < 3s | 标准网页 |
-| PDF 生成速度 | < 5s | 标准网页 |
-
-### 负载测试场景
-
+### Q: Redis 连接失败
+**A**: 确保 Redis 正在运行：
 ```bash
-# 使用 k6 进行负载测试
-k6 run --vus 10 --duration 30s load-test.js
+docker-compose ps
+redis-cli ping
 ```
 
----
+### Q: 浏览器启动失败
+**A**: 检查系统依赖（macOS 通常自带 Chrome）
 
-## 参考资源
+### Q: 端口被占用
+**A**: 修改 `.env` 中的 `PORT` 配置
 
-### 官方文档
+### Q: 队列任务不执行
+**A**:
+1. 检查 Redis 连接
+2. 查看 `/queue/status`
+3. 检查队列是否暂停
 
-- [Browserless 官方仓库](https://github.com/browserless/browserless)
+## 开发规范
+
+### 代码风格
+- TypeScript strict mode
+- ESLint + Prettier
+- 函数式编程优先
+- 完整的类型定义
+
+### 日志规范
+- 使用 Pino 结构化日志
+- 包含必要的上下文信息
+- 区分日志级别
+
+### 错误处理
+- 使用 try-catch
+- 记录详细错误信息
+- 返回统一的错误格式
+
+### 测试
+- 单元测试覆盖率 > 80%
+- 关键路径集成测试
+- API 端到端测试
+
+## 参考资料
+
+- [Fastify 文档](https://www.fastify.io/)
 - [Puppeteer 文档](https://pptr.dev/)
+- [Bull 队列文档](https://github.com/OptimalBits/bull)
+- [Prometheus 文档](https://prometheus.io/)
 - [Chrome DevTools Protocol](https://chromedevtools.github.io/devtools-protocol/)
 
-### 技术文章
-
-- [Building a Scalable Headless Browser Service](https://www.browserless.io/blog)
-- [Docker Best Practices for Node.js](https://nodejs.org/en/docs/guides/nodejs-docker-webapp/)
-
-### 竞品分析
-
-- Browserless.io (商业服务)
-- Apify (爬虫平台)
-- Selenium Grid
-- Playwright Server
-
 ---
 
-## 维护者
-
-- **项目负责人**: [Your Name]
-- **技术栈**: TypeScript, Node.js, Docker, Puppeteer
-- **许可证**: MIT License
-
----
-
-## 实施进度
-
-### ✅ 已完成 (2025-10-11)
-
-#### 1. 项目基础架构
-- ✅ 创建完整的后端目录结构
-  - `backend/src/api/` - API 路由层
-  - `backend/src/core/` - 核心业务逻辑
-  - `backend/src/services/` - 业务服务
-  - `backend/src/utils/` - 工具函数
-  - `backend/src/types/` - TypeScript 类型定义
-  - `backend/src/config/` - 配置管理
-
-#### 2. 开发环境配置
-- ✅ `package.json` - 依赖管理和脚本配置
-  - 开发依赖：TypeScript, ESLint, Prettier, Jest
-  - 运行时依赖：Fastify, Puppeteer, Bull, Redis, Pino
-- ✅ `tsconfig.json` - TypeScript 严格模式配置
-- ✅ `.eslintrc.json` - 代码规范配置
-- ✅ `.prettierrc` - 代码格式化配置
-- ✅ `.env` 和 `.env.example` - 环境变量配置
-
-#### 3. 核心工具类
-- ✅ `src/utils/logger.ts` - Pino 日志工具
-  - 支持开发/生产环境不同格式
-  - 结构化日志输出
-  - 模块化 Logger 创建
-
-#### 4. 配置管理
-- ✅ `src/config/index.ts` - 统一配置管理
-  - 使用 Zod 进行配置验证
-  - 完整的环境变量解析
-  - Chrome 启动参数配置
-  - 环境判断辅助函数
-
-#### 5. TypeScript 类型系统
-- ✅ `src/types/api.types.ts` - API 请求/响应类型
-  - Screenshot, PDF, Content, Scrape 请求类型
-  - 通用 API 响应和错误类型
-  - 健康检查和分页类型
-- ✅ `src/types/session.types.ts` - Session 管理类型
-  - Session 配置和实例类型
-  - Session 状态枚举
-  - Session 事件系统
-- ✅ `src/types/queue.types.ts` - 队列管理类型
-  - Task 类型和状态
-  - Queue 配置和统计
-  - 优先级和重试机制
-- ✅ `src/types/browser.types.ts` - Browser Pool 类型
-  - 浏览器实例元数据
-  - 资源使用统计
-  - 浏览器事件系统
-
-#### 6. 基础服务器
-- ✅ `src/index.ts` - 应用入口
-  - 优雅关闭处理
-  - 未捕获异常处理
-- ✅ `src/server.ts` - Fastify 服务器
-  - CORS 配置
-  - 安全头配置
-  - 速率限制
-  - 错误处理中间件
-  - 基础健康检查端点
-
-#### 7. 文档
-- ✅ `backend/README.md` - 后端项目文档
-  - 快速开始指南
-  - 项目结构说明
-  - 开发进度追踪
-
-#### 8. Screenshot API (MVP) ⭐ NEW
-- ✅ `src/services/screenshot.service.ts` - Screenshot 服务实现
-  - Puppeteer Core 集成
-  - 支持全页/元素截图
-  - 多种图片格式 (PNG, JPEG, WebP)
-  - 自定义视口和等待策略
-- ✅ `src/api/rest/screenshot.route.ts` - Screenshot API 路由
-  - Zod 参数验证
-  - 完善的错误处理
-  - 结构化日志记录
-- ✅ **测试验证**
-  - ✅ 基础截图功能（example.com, 7.6s）
-  - ✅ JPEG 格式和自定义视口（github.com, 4.8s）
-  - ✅ URL 参数验证
-  - ✅ 错误处理机制
-
-#### 9. Browser Pool (浏览器池) ⭐ NEW
-- ✅ `src/core/browser/BrowserPool.ts` - 浏览器池核心实现
-  - 浏览器实例生命周期管理
-  - 自动创建和复用机制
-  - 状态跟踪（idle, busy, launching, closed, error）
-  - 最大年龄自动清理
-  - 资源池统计信息
-- ✅ **集成和优化**
-  - ✅ Screenshot Service 集成浏览器池
-  - ✅ 健康检查端点展示池状态
-  - ✅ 优雅的错误处理和资源释放
-- ✅ **性能验证**
-  - ✅ 冷启动：2.6秒（首次创建浏览器）
-  - ✅ 热启动：~1.2秒（复用浏览器）
-  - ✅ **性能提升：85%** (7.6s → 1.2s)
-  - ✅ 浏览器复用成功验证
-
-#### 10. PDF Generation API ⭐ NEW
-- ✅ `src/services/pdf.service.ts` - PDF 生成服务
-  - 支持多种页面格式（A4, A3, Letter, Legal）
-  - 横向/纵向布局
-  - 自定义边距和缩放比例
-  - 页眉页脚模板支持
-  - 背景打印选项
-  - 浏览器池复用优化
-- ✅ `src/api/rest/pdf.route.ts` - PDF API 路由
-  - Zod 参数验证
-  - 完善的错误处理
-  - 结构化日志记录
-- ✅ **测试验证**
-  - ✅ 基础 PDF 生成（example.com, ~8s）
-  - ✅ 横向 A4 + 自定义边距（github.com, ~10s）
-  - ✅ URL 参数验证
-  - ✅ 浏览器池跨服务复用验证
-
-#### 11. Content Extraction API ⭐ NEW
-- ✅ `src/services/content.service.ts` - 内容抓取服务
-  - HTML 完整内容提取
-  - 纯文本内容提取
-  - 智能元数据提取
-    - Open Graph 协议支持
-    - Twitter Cards 支持
-    - 标准 meta 标签解析
-  - 灵活的内容选项控制
-  - 浏览器池复用优化
-- ✅ `src/api/rest/content.route.ts` - Content API 路由
-  - Zod 参数验证
-  - 完善的错误处理
-  - 结构化日志记录
-- ✅ **测试验证**
-  - ✅ 基础内容抓取（example.com）
-  - ✅ 富元数据提取（github.com）
-    - title: "GitHub · Build and ship software on a single, collaborative platform"
-    - description: 完整描述文本
-    - image: Open Graph 图片 URL
-  - ✅ 选择性内容提取（仅元数据）
-  - ✅ URL 参数验证
-  - ✅ 浏览器池跨服务复用验证
-
-#### 12. Scrape API (数据抓取) ⭐ NEW
-- ✅ `src/services/scrape.service.ts` - 数据抓取服务
-  - CSS 选择器支持
-  - 多种属性提取 (textContent, innerText, innerHTML, value, href, src)
-  - 自定义 HTML 属性提取
-  - 单个/多个元素抓取
-  - waitForSelector 支持
-  - 延迟加载支持
-  - 浏览器池复用优化
-- ✅ `src/api/rest/scrape.route.ts` - Scrape API 路由
-  - Zod 参数验证
-  - 完善的错误处理
-  - 结构化日志记录
-- ✅ **测试验证**
-  - ✅ 基础数据抓取（example.com - h1, p, a）
-  - ✅ 多元素抓取（multiple: true）
-  - ✅ 属性提取（href attribute）
-  - ✅ 复杂选择器（GitHub - meta[property="og:description"]）
-  - ✅ URL 参数验证
-  - ✅ 浏览器池跨服务复用验证（totalUseCount: 3）
-
-#### 13. Prometheus 监控 ⭐ NEW
-- ✅ `src/utils/metrics.ts` - Prometheus 指标定义
-  - 默认系统指标收集（CPU, 内存, 事件循环延迟）
-  - HTTP 请求计数和持续时间直方图
-  - 浏览器池状态 Gauge
-  - 任务执行指标（持续时间和计数）
-  - 活跃会话和队列长度 Gauge
-- ✅ `/metrics` 端点
-  - Prometheus 格式导出
-  - 自动更新浏览器池指标
-  - 通过中间件自动记录所有 HTTP 请求
-- ✅ **测试验证**
-  - ✅ 默认指标收集（进程 CPU, 内存, 事件循环）
-  - ✅ HTTP 请求指标自动记录
-  - ✅ 浏览器池状态自动更新
-  - ✅ Prometheus 格式正确导出
-
-#### 14. WebSocket Proxy Server (CDP 代理) ⭐ NEW
-- ✅ `src/services/websocket-proxy.service.ts` - WebSocket 代理服务（已废弃）
-  - 初始实现遇到 Fastify WebSocket 兼容性问题
-- ✅ `src/api/websocket/proxy.route.ts` - WebSocket 代理路由（简化版）
-  - 直接在路由层实现消息转发
-  - 从浏览器池获取浏览器实例
-  - 客户端 WebSocket ↔️ 浏览器 WebSocket 双向代理
-  - 连接生命周期管理
-  - 错误处理和资源清理
-- ✅ `/ws` 端点
-  - 支持 Puppeteer/Playwright 通过 WebSocket 连接
-  - CDP 协议透传
-  - 浏览器池集成
-- ⚠️  **状态：基础实现完成，待调试**
-  - ✅ WebSocket 连接建立成功
-  - ✅ 浏览器实例获取和 WebSocket 端点连接
-  - ⏳ 消息转发机制需要进一步调试
-  - ⏳ 需要完整的端到端测试验证
-
-**使用示例：**
-```javascript
-// Puppeteer 连接示例
-const puppeteer = require('puppeteer-core');
-
-const browser = await puppeteer.connect({
-  browserWSEndpoint: 'ws://localhost:3001/ws'
-});
-
-const page = await browser.newPage();
-await page.goto('https://example.com');
-await browser.close();
-```
-
-**技术说明：**
-- 使用 @fastify/websocket 插件
-- 直接代理 CDP (Chrome DevTools Protocol) 消息
-- 每个 WebSocket 连接获取独立的浏览器实例
-- 连接关闭时自动释放浏览器到池中
-
-#### 15. Session Manager (会话管理器) ⭐ NEW
-- ✅ `src/core/session/SessionManager.ts` - 会话管理核心实现
-  - EventEmitter 事件系统
-  - 会话生命周期管理（创建、获取、关闭）
-  - 自动超时清理（每30秒检查）
-  - 空闲会话检测和清理
-  - 最大存活时间控制
-  - 会话统计和监控
-- ✅ `src/api/rest/session.route.ts` - Session API 路由
-  - `GET /sessions` - 获取所有活跃会话
-  - `GET /sessions/:id` - 获取指定会话详情
-  - `DELETE /sessions/:id` - 关闭指定会话
-  - `GET /sessions/stats` - 获取会话统计
-- ✅ **集成和功能**
-  - ✅ WebSocket Proxy 集成 SessionManager
-  - ✅ 自动活动时间更新
-  - ✅ 连接关闭时自动清理会话
-  - ✅ 健康检查端点包含会话统计
-  - ✅ Prometheus 指标集成
-- ✅ **监控指标**
-  - ✅ `browser_autos_sessions` - 会话状态 Gauge（active, idle）
-  - ✅ `browser_autos_session_duration_seconds` - 会话持续时间 Histogram
-  - ✅ `browser_autos_session_total` - 会话创建总数 Counter
-- ✅ **测试验证**
-  - ✅ 会话统计 API 正常工作
-  - ✅ 会话列表 API 返回正确格式
-  - ✅ 健康检查包含会话信息
-  - ✅ Prometheus metrics 包含会话指标
-
-**功能特点：**
-- 自动超时管理：空闲5分钟自动关闭
-- 最大存活时间：会话最长存活1小时
-- 事件系统：支持会话创建、关闭、超时等事件
-- 完整监控：提供详细的会话统计和 Prometheus 指标
-- 优雅清理：支持单个会话关闭和批量关闭
-
-#### 16. 认证系统完善和安全加固 🔒 NEW (2025-10-11)
-- ✅ **API 认证保护** - 修复严重安全漏洞
-  - 问题：所有 API 完全公开，无任何认证保护
-  - 解决：为所有业务 API 添加认证中间件
-    - `/screenshot` - Screenshot API
-    - `/pdf` - PDF Generation API
-    - `/content` - Content Extraction API
-    - `/scrape` - Web Scraping API
-    - `/sessions/*` - Session Management API
-  - 支持 JWT Token 和 API Key 两种认证方式
-  - 可通过 `REQUIRE_AUTH` 环境变量控制（生产默认 `true`）
-
-- ✅ **认证中间件实现**
-  - `src/middleware/auth.middleware.ts`
-    - `auth()` - 组合认证（JWT 或 API Key）
-    - `jwtAuth()` - JWT Token 认证
-    - `apiKeyAuth()` - API Key 认证
-    - `requireRole()` - 角色验证
-    - `requirePermission()` - 权限验证
-    - `optionalAuth()` - 可选认证
-
-- ✅ **配置更新**
-  - `src/config/index.ts` - 添加 `requireAuth` 配置项
-  - `.env.example` - 添加 `REQUIRE_AUTH` 和 `ENABLE_QUEUE` 配置
-
-**使用示例：**
-```bash
-# 1. JWT Token 认证
-TOKEN=$(curl -s -X POST http://localhost:3001/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username": "admin", "password": "admin123"}' \
-  | jq -r '.data.accessToken')
-
-curl -X POST http://localhost:3001/screenshot \
-  -H "Authorization: Bearer $TOKEN" \
-  -d '{"url": "https://example.com"}'
-
-# 2. API Key 认证
-curl -X POST http://localhost:3001/screenshot \
-  -H "X-API-Key: <api_key>" \
-  -d '{"url": "https://example.com"}'
-
-# 3. 开发环境禁用认证（可选）
-# .env
-REQUIRE_AUTH=false
-```
-
-**安全提升：**
-- ❌ 之前：所有 API 完全公开，无任何认证
-- ✅ 现在：所有业务 API 都需要 JWT 或 API Key 认证
-- ✅ 支持灵活的认证控制（生产强制，开发可选）
-
-#### 17. Docker 多架构支持 🚀 NEW (2025-10-11)
-- ✅ **多架构镜像构建**
-  - 支持 `linux/amd64` (Intel/AMD 64位)
-  - 支持 `linux/arm64` (Apple Silicon, AWS Graviton)
-  - 使用 Docker buildx 构建多架构镜像
-
-- ✅ **Docker Hub 发布**
-  - 仓库：`browserautos/chromium:latest`
-  - 基础镜像：Debian Bookworm Slim
-  - 浏览器：Playwright Chromium 141.0.7390.37
-  - 镜像大小：~1.4GB (每个架构)
-
-- ✅ **本地测试验证**
-  - arm64 镜像测试通过
-  - 健康检查正常
-  - 认证功能正常
-  - 截图 API 正常 (PNG 20KB)
-
-**使用方式：**
-```bash
-# 拉取镜像（自动选择匹配的架构）
-docker pull browserautos/chromium:latest
-
-# 运行容器
-docker run -d --name chromium -p 3001:3001 \
-  -e JWT_SECRET=your-secret-key \
-  --shm-size=2gb --memory=4g \
-  browserautos/chromium:latest
-
-# 禁用认证（仅开发环境）
-docker run -d --name chromium -p 3001:3001 \
-  -e JWT_SECRET=your-secret-key \
-  -e REQUIRE_AUTH=false \
-  --shm-size=2gb --memory=4g \
-  browserautos/chromium:latest
-```
-
-**兼容性提升：**
-- ❌ 之前：仅支持 amd64 架构
-- ✅ 现在：支持 amd64 + arm64 双架构
-- ✅ 适用于 Apple Silicon, AWS Graviton, Azure ARM 等平台
-
-**文档：**
-- `backend/SECURITY_AND_MULTIARCH_UPDATE.md` - 详细更新文档
-
-### 📊 MVP 功能演示
-
-```bash
-# 运行服务器（端口 3001）
-cd backend && npm run dev
-
-# 测试健康检查（包含浏览器池状态）
-curl http://localhost:3001/health | jq .
-
-# 生成截图
-curl -X POST http://localhost:3001/screenshot \
-  -H "Content-Type: application/json" \
-  -d '{"url": "https://example.com", "format": "png"}' \
-  -o screenshot.png
-
-# 查看浏览器池统计
-curl http://localhost:3001/health | jq '.data.browserPool'
-
-# 生成 PDF
-curl -X POST http://localhost:3001/pdf \
-  -H "Content-Type: application/json" \
-  -d '{"url": "https://example.com", "format": "A4"}' \
-  -o document.pdf
-
-# 抓取网页内容（HTML + 文本 + 元数据）
-curl -X POST http://localhost:3001/content \
-  -H "Content-Type: application/json" \
-  -d '{"url": "https://github.com"}' | jq .
-
-# 仅提取元数据
-curl -X POST http://localhost:3001/content \
-  -H "Content-Type: application/json" \
-  -d '{"url": "https://github.com", "includeHtml": false, "includeText": false}' \
-  | jq '.data.metadata'
-
-# 抓取结构化数据（单个元素）
-curl -X POST http://localhost:3001/scrape \
-  -H "Content-Type: application/json" \
-  -d '{
-    "url": "https://example.com",
-    "elements": [
-      {"selector": "h1", "property": "textContent"},
-      {"selector": "a", "property": "href"}
-    ]
-  }' | jq '.data.data'
-
-# 抓取多个元素
-curl -X POST http://localhost:3001/scrape \
-  -H "Content-Type: application/json" \
-  -d '{
-    "url": "https://example.com",
-    "elements": [
-      {"selector": "p", "property": "textContent", "multiple": true}
-    ]
-  }' | jq '.data.data'
-
-# 查看会话统计
-curl http://localhost:3001/sessions/stats | jq
-
-# 查看活跃会话列表
-curl http://localhost:3001/sessions | jq
-
-# 关闭指定会话
-curl -X DELETE http://localhost:3001/sessions/{session-id} | jq
-```
-
-### 🚀 性能基准测试
-
-**测试环境：** macOS, Chrome, 本地开发
-
-| 场景 | 无浏览器池 | 使用浏览器池 | 提升 |
-|------|-----------|------------|------|
-| 首次截图 | 7.6s | 2.6s | 65% ↑ |
-| 连续截图 | 4.8s | 1.2s | 85% ↑ |
-| 平均响应 | ~6s | ~1.5s | 75% ↑ |
-
-### 📋 下一步行动
-
-1. **浏览器池管理** (Browser Pool)
-   - 实现浏览器实例的生命周期管理
-   - 连接池机制（获取、释放、复用）
-   - 资源监控和自动清理
-
-2. **Session 管理器** (Session Manager)
-   - WebSocket 会话管理
-   - 会话超时和清理
-   - 多租户隔离
-
-3. **队列管理器** (Queue Manager)
-   - Bull 队列集成
-   - 任务调度和执行
-   - 重试和错误处理
-
-4. **REST API 端点**
-   - `/screenshot` - 截图服务
-   - `/pdf` - PDF 生成
-   - `/content` - 内容抓取
-   - `/scrape` - 数据抓取
-
-5. **WebSocket 代理**
-   - CDP 协议代理
-   - Puppeteer/Playwright 连接支持
-
-6. **监控和指标**
-   - Prometheus metrics
-   - 健康检查完善
-
-7. **Docker 部署**
-   - Dockerfile 编写
-   - docker-compose 配置
-   - Redis 集成
-
-8. **测试和文档**
-   - 单元测试
-   - 集成测试
-   - API 文档
-
----
-
-*最后更新: 2025-10-11*
+**最后更新**: 2025-10-11
+**当前版本**: 1.0.0
+**开发状态**: ✅ API 文档已完成
+
+## 已完成功能清单
+
+- [x] Screenshot API - 截图服务
+- [x] PDF API - PDF 生成
+- [x] Content API - 内容提取
+- [x] Scrape API - 数据爬取
+- [x] Browser Pool - 浏览器池管理
+- [x] Prometheus Metrics - 监控指标
+- [x] WebSocket Proxy - WebSocket 代理
+- [x] Session Manager - 会话管理
+- [x] Queue Manager - 队列管理器
+- [x] Authentication System - 认证系统（JWT + API Key）
+- [x] Docker Deployment - Docker 部署
+- [x] Testing Suite - 测试套件（Jest + Unit + Integration + E2E）
+- [x] API Documentation - API 文档（Swagger/OpenAPI）
