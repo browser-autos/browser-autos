@@ -1,0 +1,203 @@
+# ==============================================================================
+# Browser.autos - 一键部署 Docker Compose 配置
+# ==============================================================================
+#
+# 快速启动：
+#   docker-compose up -d
+#
+# 查看日志：
+#   docker-compose logs -f
+#
+# 停止服务：
+#   docker-compose down
+#
+# ==============================================================================
+
+version: '3.8'
+
+services:
+  # ===================
+  # Redis - 任务队列
+  # ===================
+  redis:
+    image: redis:7-alpine
+    container_name: browser-autos-redis
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - browser-network
+
+  # ===========================
+  # Backend API - 后端 API 服务
+  # ===========================
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: browser-autos-api
+    ports:
+      - "3001:3001"
+    environment:
+      # 服务配置
+      - NODE_ENV=production
+      - PORT=3001
+      - HOST=0.0.0.0
+      - LOG_LEVEL=info
+
+      # Redis 配置
+      - REDIS_URL=redis://redis:6379
+
+      # JWT 配置
+      - JWT_SECRET=${JWT_SECRET:-change-me-in-production-please}
+      - TOKEN_EXPIRY=30d
+
+      # 浏览器池配置
+      - BROWSER_POOL_MIN=2
+      - BROWSER_POOL_MAX=10
+      - BROWSER_MAX_AGE=3600000
+
+      # 队列配置
+      - QUEUE_NAME=browser-tasks
+      - QUEUE_MAX_CONCURRENT=5
+      - QUEUE_TIMEOUT=120000
+      - QUEUE_RETRIES=3
+
+      # 速率限制
+      - RATE_LIMIT_WINDOW=900000
+      - RATE_LIMIT_MAX=100
+
+      # CORS 配置
+      - CORS_ORIGIN=*
+      - CORS_CREDENTIALS=true
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - /dev/shm:/dev/shm
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    networks:
+      - browser-network
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: '2.0'
+        reservations:
+          memory: 2G
+          cpus: '1.0'
+
+  # ============================
+  # Frontend - 前端 Web 应用
+  # ============================
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: browser-autos-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://localhost:3001
+    depends_on:
+      - api
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    networks:
+      - browser-network
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+
+  # ====================
+  # Prometheus - 监控
+  # ====================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: browser-autos-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./backend/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - browser-network
+
+  # =================
+  # Grafana - 可视化
+  # =================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: browser-autos-grafana
+    ports:
+      - "3002:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_SERVER_ROOT_URL=http://localhost:3002
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - browser-network
+
+# ===================
+# 数据卷
+# ===================
+volumes:
+  redis-data:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
+
+# ===================
+# 网络
+# ===================
+networks:
+  browser-network:
+    driver: bridge

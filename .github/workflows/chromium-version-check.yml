@@ -1,0 +1,103 @@
+# 自动检查 Alpine Chromium 版本更新
+# 每周检查一次 Alpine 仓库中的 Chromium 版本
+
+name: Chromium Version Check
+
+on:
+  schedule:
+    # 每周一 UTC 01:00 (北京时间 09:00) 运行
+    - cron: '0 1 * * 1'
+  workflow_dispatch: # 允许手动触发
+
+jobs:
+  check-chromium-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check Alpine Chromium version
+        id: check-version
+        run: |
+          echo "Checking Alpine 3.22 Chromium version..."
+
+          # 获取 Alpine 仓库中的 Chromium 版本
+          ALPINE_VERSION=$(docker run --rm alpine:3.22 sh -c "apk info chromium | grep 'chromium-' | head -1 | cut -d'-' -f2")
+          echo "Alpine Chromium version: $ALPINE_VERSION"
+          echo "alpine_version=$ALPINE_VERSION" >> $GITHUB_OUTPUT
+
+          # 获取当前 Dockerfile 中记录的版本（如果有）
+          if grep -q "CHROMIUM_VERSION" backend/Dockerfile; then
+            CURRENT_VERSION=$(grep "CHROMIUM_VERSION" backend/Dockerfile | cut -d'=' -f2 | tr -d '"')
+            echo "Current documented version: $CURRENT_VERSION"
+            echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          else
+            echo "No version documented in Dockerfile"
+            echo "current_version=unknown" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check Playwright Chromium version
+        id: check-playwright
+        run: |
+          echo "Checking Playwright Chromium version..."
+
+          # 获取 Playwright 包的最新版本
+          PLAYWRIGHT_VERSION=$(npm view playwright version)
+          echo "Playwright latest version: $PLAYWRIGHT_VERSION"
+          echo "playwright_version=$PLAYWRIGHT_VERSION" >> $GITHUB_OUTPUT
+
+          # 获取 package.json 中的 Playwright 版本
+          CURRENT_PLAYWRIGHT=$(cat backend/package.json | grep '"playwright"' | cut -d'"' -f4 | tr -d '^~')
+          echo "Current Playwright version: $CURRENT_PLAYWRIGHT"
+          echo "current_playwright=$CURRENT_PLAYWRIGHT" >> $GITHUB_OUTPUT
+
+      - name: Create issue if update available
+        if: steps.check-version.outputs.alpine_version != steps.check-version.outputs.current_version || steps.check-playwright.outputs.playwright_version != steps.check-playwright.outputs.current_playwright
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const alpineVersion = '${{ steps.check-version.outputs.alpine_version }}';
+            const currentVersion = '${{ steps.check-version.outputs.current_version }}';
+            const playwrightVersion = '${{ steps.check-playwright.outputs.playwright_version }}';
+            const currentPlaywright = '${{ steps.check-playwright.outputs.current_playwright }}';
+
+            let body = '## 🔄 Browser Version Update Available\n\n';
+
+            if (alpineVersion !== currentVersion) {
+              body += `### Alpine Chromium Update\n\n`;
+              body += `- **Current**: ${currentVersion}\n`;
+              body += `- **Available**: ${alpineVersion}\n\n`;
+              body += `Update the \`CHROMIUM_VERSION\` in \`backend/Dockerfile\` to document the new version.\n\n`;
+            }
+
+            if (playwrightVersion !== currentPlaywright) {
+              body += `### Playwright Update\n\n`;
+              body += `- **Current**: ${currentPlaywright}\n`;
+              body += `- **Available**: ${playwrightVersion}\n\n`;
+              body += `Dependabot will create a PR for this update automatically.\n\n`;
+            }
+
+            body += `### Actions\n\n`;
+            body += `- [ ] Review Chromium release notes\n`;
+            body += `- [ ] Update Dockerfile if needed\n`;
+            body += `- [ ] Test Docker image build\n`;
+            body += `- [ ] Update documentation\n\n`;
+            body += `---\n*This issue was automatically created by the Chromium Version Check workflow.*`;
+
+            // Check if issue already exists
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'chromium-update'
+            });
+
+            if (issues.data.length === 0) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `🔄 Browser Version Update: Chromium ${alpineVersion} / Playwright ${playwrightVersion}`,
+                body: body,
+                labels: ['chromium-update', 'dependencies']
+              });
+            }

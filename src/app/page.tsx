@@ -32,12 +32,20 @@ export default function Home() {
                 {t('hero.subtitle')}
               </p>
               <div className="flex flex-col sm:flex-row gap-6 justify-center items-center pt-8">
-                <button className="px-10 py-4 bg-gradient-to-r from-violet-600 to-purple-600 text-white text-lg font-semibold rounded-2xl hover:from-violet-700 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-violet-500/25 transform hover:scale-105">
-                  {t('hero.cta.start')}
-                </button>
-                <button className="px-10 py-4 bg-white/10 backdrop-blur-sm text-white text-lg font-semibold rounded-2xl border border-white/20 hover:bg-white/20 transition-all duration-300">
-                  {t('hero.cta.docs')}
-                </button>
+                <a
+                  href="/playground"
+                  className="px-10 py-4 bg-gradient-to-r from-violet-600 to-purple-600 text-white text-lg font-semibold rounded-2xl hover:from-violet-700 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-violet-500/25 transform hover:scale-105"
+                >
+                  🎮 {t('hero.cta.start')}
+                </a>
+                <a
+                  href="http://localhost:3001/docs"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-10 py-4 bg-white/10 backdrop-blur-sm text-white text-lg font-semibold rounded-2xl border border-white/20 hover:bg-white/20 transition-all duration-300"
+                >
+                  📚 {t('hero.cta.docs')}
+                </a>
               </div>
             </div>
           </div>
