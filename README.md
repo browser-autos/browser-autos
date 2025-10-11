@@ -41,9 +41,17 @@ browser.autos/
 
 ```bash
 docker run -d -p 3001:3001 \
-  -e JWT_SECRET=your-secret \
+  -e JWT_SECRET=your-secret-key \
+  -e DEFAULT_ADMIN_USERNAME=browserautos \
+  -e DEFAULT_ADMIN_PASSWORD=browser.autos \
   --shm-size=2gb \
   browserautos/browser-autos:latest
+
+# Test it
+curl http://localhost:3001/health
+
+# Check logs to see default credentials
+docker logs browser-autos | grep "Default credentials"
 ```
 
 ### From Source

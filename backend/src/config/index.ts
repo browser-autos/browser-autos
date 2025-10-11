@@ -55,6 +55,14 @@ const configSchema = z.object({
   tokenExpiry: z.string().default('30d'),
   requireAuth: z.coerce.boolean().default(true), // 是否要求认证（生产环境应该为 true）
 
+  // 默认用户凭据配置
+  defaultAdminUsername: z.string().default('browserautos'),
+  defaultAdminPassword: z.string().default('browser.autos'),
+  defaultAdminEmail: z.string().email().default('admin@browser.autos'),
+  defaultApiUsername: z.string().default('api-user'),
+  defaultApiPassword: z.string().default('browser.autos'),
+  defaultApiEmail: z.string().email().default('api@browser.autos'),
+
   // Chrome 配置
   maxConcurrentSessions: z.coerce.number().min(1).max(100).default(10),
   sessionTimeout: z.coerce.number().min(1000).default(300000),
@@ -112,6 +120,14 @@ function loadConfig(): Config {
       jwtSecret: process.env.JWT_SECRET,
       tokenExpiry: process.env.TOKEN_EXPIRY,
       requireAuth: process.env.REQUIRE_AUTH,
+
+      // 默认用户凭据配置
+      defaultAdminUsername: process.env.DEFAULT_ADMIN_USERNAME,
+      defaultAdminPassword: process.env.DEFAULT_ADMIN_PASSWORD,
+      defaultAdminEmail: process.env.DEFAULT_ADMIN_EMAIL,
+      defaultApiUsername: process.env.DEFAULT_API_USERNAME,
+      defaultApiPassword: process.env.DEFAULT_API_PASSWORD,
+      defaultApiEmail: process.env.DEFAULT_API_EMAIL,
 
       // Chrome 配置
       maxConcurrentSessions: process.env.MAX_CONCURRENT_SESSIONS,

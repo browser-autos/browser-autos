@@ -2,6 +2,7 @@ import { randomBytes } from 'crypto';
 import { moduleLogger } from '../utils/logger';
 import { User, UserRole, ApiKey, CreateApiKeyRequest, ApiKeyResponse } from '../types/auth.types';
 import { authService } from './auth.service';
+import { config } from '../config';
 
 const logger = moduleLogger('user-service');
 
@@ -25,11 +26,11 @@ export class UserService {
    * 初始化默认用户
    */
   private initializeDefaultUsers() {
-    // 默认管理员
+    // 默认管理员（从环境变量读取）
     const adminUser: User = {
       id: 'admin-001',
-      username: 'admin',
-      email: 'admin@browser.autos',
+      username: config.defaultAdminUsername,
+      email: config.defaultAdminEmail,
       role: UserRole.ADMIN,
       apiKeys: [],
       createdAt: new Date(),
@@ -39,11 +40,11 @@ export class UserService {
     this.users.set(adminUser.id, adminUser);
     this.usersByUsername.set(adminUser.username, adminUser);
 
-    // 默认 API 用户
+    // 默认 API 用户（从环境变量读取）
     const apiUser: User = {
       id: 'user-001',
-      username: 'api-user',
-      email: 'api@browser.autos',
+      username: config.defaultApiUsername,
+      email: config.defaultApiEmail,
       role: UserRole.USER,
       apiKeys: [],
       createdAt: new Date(),
@@ -65,6 +66,17 @@ export class UserService {
         apiKeys: this.apiKeys.size,
       },
       'Default users initialized'
+    );
+
+    // 打印默认凭据信息（方便用户首次登录）
+    logger.info(
+      {
+        adminUsername: config.defaultAdminUsername,
+        adminPassword: config.defaultAdminPassword,
+        apiUsername: config.defaultApiUsername,
+        apiPassword: config.defaultApiPassword,
+      },
+      '🔑 Default credentials (configure via environment variables)'
     );
 
     // 在开发环境下输出默认 API Key
@@ -106,9 +118,10 @@ export class UserService {
 
     // 简化的密码验证（开发环境）
     // 生产环境应使用 bcrypt.compare(password, user.passwordHash)
+    // 从配置读取默认密码
     const validPasswords: Record<string, string> = {
-      admin: 'admin123',
-      'api-user': 'apiuser123',
+      [config.defaultAdminUsername]: config.defaultAdminPassword,
+      [config.defaultApiUsername]: config.defaultApiPassword,
     };
 
     if (validPasswords[username] === password) {

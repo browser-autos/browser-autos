@@ -71,12 +71,17 @@ docker run -d \
   --name browser-autos \
   -p 3001:3001 \
   -e JWT_SECRET=your-secret-key \
+  -e DEFAULT_ADMIN_USERNAME=browserautos \
+  -e DEFAULT_ADMIN_PASSWORD=browser.autos \
   --shm-size=2gb \
   --memory=4g \
   browserautos/browser-autos:latest
 
 # 测试服务
 curl http://localhost:3001/health
+
+# 查看日志中的默认凭据
+docker logs browser-autos | grep "Default credentials"
 ```
 
 **方式 2: GitHub Container Registry**
@@ -105,10 +110,25 @@ docker run -d \
 
 ## 📚 API 示例
 
+> **注意：** 所有 API 端点都需要认证。请先登录获取访问令牌。
+
+### 0. 身份认证
+
+```bash
+# 登录获取访问令牌
+TOKEN=$(curl -s -X POST http://localhost:3001/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "browserautos", "password": "browser.autos"}' \
+  | jq -r '.data.accessToken')
+
+echo "Token: $TOKEN"
+```
+
 ### 1. 截图 API
 
 ```bash
 curl -X POST http://localhost:3001/screenshot \
+  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"url": "https://example.com", "fullPage": true}' \
   -o screenshot.png
@@ -118,6 +138,7 @@ curl -X POST http://localhost:3001/screenshot \
 
 ```bash
 curl -X POST http://localhost:3001/pdf \
+  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"url": "https://example.com", "format": "A4"}' \
   -o document.pdf
@@ -127,6 +148,7 @@ curl -X POST http://localhost:3001/pdf \
 
 ```bash
 curl -X POST http://localhost:3001/scrape \
+  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "url": "https://example.com",
@@ -141,8 +163,22 @@ curl -X POST http://localhost:3001/scrape \
 
 ```bash
 curl -X POST http://localhost:3001/content \
+  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"url": "https://github.com", "includeMetadata": true}'
+```
+
+**测试时禁用认证（不推荐用于生产环境）：**
+
+```bash
+# 启动容器时禁用认证
+docker run -d \
+  --name browser-autos \
+  -p 3001:3001 \
+  -e JWT_SECRET=your-secret-key \
+  -e REQUIRE_AUTH=false \
+  --shm-size=2gb \
+  browserautos/browser-autos:latest
 ```
 
 ---
@@ -187,7 +223,7 @@ await browser.close();
 ```bash
 curl -X POST http://localhost:3001/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username": "admin", "password": "admin123"}'
+  -d '{"username": "browserautos", "password": "browser.autos"}'
 ```
 
 ### 使用 API Key
@@ -199,8 +235,8 @@ curl -X POST http://localhost:3001/screenshot \
 ```
 
 **默认用户：**
-- 管理员：`admin` / `admin123`
-- API 用户：`api-user` / `apiuser123`
+- 管理员：`browserautos` / `browser.autos`
+- API 用户：`api-user` / `browser.autos`
 
 ---
 

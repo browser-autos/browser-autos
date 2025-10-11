@@ -95,14 +95,14 @@ LOG_LEVEL=info
 ## 🔐 Authentication
 
 **Default users:**
-- Admin: `admin` / `admin123`
-- API User: `api-user` / `apiuser123`
+- Admin: `browserautos` / `browser.autos`
+- API User: `api-user` / `browser.autos`
 
 **Get access token:**
 ```bash
 curl -X POST http://localhost:3001/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username": "admin", "password": "admin123"}'
+  -d '{"username": "browserautos", "password": "browser.autos"}'
 ```
 
 **Use API Key:**

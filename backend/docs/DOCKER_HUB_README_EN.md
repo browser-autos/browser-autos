@@ -15,12 +15,17 @@ docker run -d \
   --name browser-autos \
   -p 3001:3001 \
   -e JWT_SECRET=your-secret-key \
+  -e DEFAULT_ADMIN_USERNAME=browserautos \
+  -e DEFAULT_ADMIN_PASSWORD=browser.autos \
   --shm-size=2gb \
   --memory=4g \
   browserautos/browser-autos:latest
 
 # Test it
 curl http://localhost:3001/health
+
+# Check logs to see default credentials
+docker logs browser-autos | grep "Default credentials"
 ```
 
 ---
@@ -40,28 +45,45 @@ curl http://localhost:3001/health
 
 ## REST API Examples
 
-### Screenshot
+> **Note:** All API endpoints require authentication. First, get an access token by logging in.
+
+### 1. Authentication
+
+```bash
+# Login to get access token
+TOKEN=$(curl -s -X POST http://localhost:3001/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "browserautos", "password": "browser.autos"}' \
+  | jq -r '.data.accessToken')
+
+echo "Token: $TOKEN"
+```
+
+### 2. Screenshot
 
 ```bash
 curl -X POST http://localhost:3001/screenshot \
+  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"url": "https://example.com", "fullPage": true}' \
   -o screenshot.png
 ```
 
-### PDF Generation
+### 3. PDF Generation
 
 ```bash
 curl -X POST http://localhost:3001/pdf \
+  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"url": "https://example.com", "format": "A4"}' \
   -o document.pdf
 ```
 
-### Web Scraping
+### 4. Web Scraping
 
 ```bash
 curl -X POST http://localhost:3001/scrape \
+  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "url": "https://example.com",
@@ -72,25 +94,50 @@ curl -X POST http://localhost:3001/scrape \
   }'
 ```
 
-### Content Extraction
+### 5. Content Extraction
 
 ```bash
 curl -X POST http://localhost:3001/content \
+  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"url": "https://example.com", "includeMetadata": true}'
+```
+
+**For testing without authentication:**
+
+```bash
+# Start container with auth disabled (NOT recommended for production)
+docker run -d \
+  --name browser-autos \
+  -p 3001:3001 \
+  -e JWT_SECRET=your-secret \
+  -e REQUIRE_AUTH=false \
+  --shm-size=2gb \
+  browserautos/browser-autos:latest
 ```
 
 ---
 
 ## Integration
 
+> **Note:** WebSocket connections also require authentication. Pass the token as a URL parameter.
+
 ### Puppeteer
 
 ```javascript
 const puppeteer = require('puppeteer-core');
+const axios = require('axios');
 
+// Get access token
+const { data } = await axios.post('http://localhost:3001/auth/login', {
+  username: 'browserautos',
+  password: 'browser.autos'
+});
+const token = data.data.accessToken;
+
+// Connect with token
 const browser = await puppeteer.connect({
-  browserWSEndpoint: 'ws://localhost:3001/ws'
+  browserWSEndpoint: `ws://localhost:3001/ws?token=${token}`
 });
 
 const page = await browser.newPage();
@@ -102,9 +149,18 @@ await browser.close();
 
 ```javascript
 const { chromium } = require('playwright');
+const axios = require('axios');
 
+// Get access token
+const { data } = await axios.post('http://localhost:3001/auth/login', {
+  username: 'browserautos',
+  password: 'browser.autos'
+});
+const token = data.data.accessToken;
+
+// Connect with token
 const browser = await chromium.connect({
-  wsEndpoint: 'ws://localhost:3001/ws'
+  wsEndpoint: `ws://localhost:3001/ws?token=${token}`
 });
 
 const page = await browser.newPage();
@@ -117,15 +173,15 @@ await browser.close();
 ## Authentication
 
 **Default Users:**
-- Admin: `admin` / `admin123`
-- API User: `api-user` / `apiuser123`
+- Admin: `browserautos` / `browser.autos`
+- API User: `api-user` / `browser.autos`
 
 **Get Access Token:**
 
 ```bash
 curl -X POST http://localhost:3001/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username": "admin", "password": "admin123"}'
+  -d '{"username": "browserautos", "password": "browser.autos"}'
 ```
 
 **Use Token:**
