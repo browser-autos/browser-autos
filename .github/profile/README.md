@@ -1,7 +1,7 @@
 # browser.autos
 
 <div align="center">
-  <img src="https://raw.githubusercontent.com/browser-autos/browser-autos/main/logo.png" alt="browser.autos logo" width="200">
+  <img src="https://raw.githubusercontent.com/browser-autos/browser-autos/main/assets/logo_github.png" alt="browser.autos logo" width="100%">
 
   <h3>🚀 Production-ready browser automation platform</h3>
 
