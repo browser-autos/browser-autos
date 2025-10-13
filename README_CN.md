@@ -82,6 +82,9 @@ curl http://localhost:3001/health
 
 # 查看日志中的默认凭据
 docker logs browser-autos | grep "Default credentials"
+
+# 打开交互式 API 文档（Swagger UI）
+open http://localhost:3001/docs
 ```
 
 **方式 2: GitHub Container Registry**
@@ -216,6 +219,26 @@ await browser.close();
 
 ---
 
+## 🧭 核心端点
+
+| 功能 | 地址 | 状态 |
+|------|------|------|
+| 健康检查 | `GET /health` | ✅ 返回服务与队列统计 |
+| Prometheus 指标 | `GET /metrics` | ✅ 暴露浏览器池与队列指标 |
+| Swagger 文档 | `GET /docs` | ✅ 在线交互式调试 |
+| OpenAPI 规范 | `GET /docs/json` | ✅ 机器可读 Schema |
+| 截图 API | `POST /screenshot` | ✅ 支持 PNG/JPEG/WebP |
+| PDF API | `POST /pdf` | ✅ 自定义尺寸与选项 |
+| 内容提取 | `POST /content` | ✅ HTML / 文本 / 元数据 |
+| 网页爬取 | `POST /scrape` | ✅ CSS 选择器抓取 |
+| 会话管理 | `GET /sessions` | ✅ 查看/关闭浏览器会话 |
+| 队列管理 | `/queue/*` | ✅ 异步任务增删查重试 |
+| WebSocket 代理 | `ws://<host>/ws` | ✅ 直连 Puppeteer/Playwright |
+
+所有端点在服务启动时自动注册。Swagger UI 自动读取 Fastify 路由定义生成文档，支持在浏览器内携带 JWT 或 API Key 进行调试。【F:src/server.ts†L40-L140】【F:src/config/swagger.ts†L13-L95】【F:src/config/swagger.ts†L281-L310】
+
+---
+
 ## 🔒 身份认证
 
 ### 获取访问令牌
@@ -298,23 +321,66 @@ git clone git@github.com:browser-autos/browser-autos.git
 cd browser-autos
 
 # 安装依赖
-cd backend
 npm install
 
 # 启动开发服务器
 npm run dev
 
 # API 地址: http://localhost:3001
+
+# Swagger 文档: http://localhost:3001/docs
+# OpenAPI JSON: http://localhost:3001/docs/json
 ```
+
+---
+
+## 🔁 队列与 Redis 支持
+
+- 异步任务队列基于 Bull + Redis，默认 **关闭**。
+- 设置 `ENABLE_QUEUE=true` 且提供 `REDIS_URL=redis://<host>:6379` 即可启用。
+- 启用后 `/health`、`/metrics` 以及 Swagger 文档会实时展示队列指标与管理接口。【F:src/config/index.ts†L69-L116】【F:src/server.ts†L140-L198】
+
+示例 Docker 命令：
+
+```bash
+docker run -d -p 3001:3001 \
+  -e JWT_SECRET=your-secret-key \
+  -e ENABLE_QUEUE=true \
+  -e REDIS_URL=redis://redis:6379 \
+  --link redis \
+  browserautos/browser-autos:latest
+```
+
+---
+
+## 📈 可观测性
+
+- `GET /metrics` 暴露 Prometheus 指标，包括 HTTP 延迟、浏览器池使用率与队列深度。
+- Pino 结构化日志内置请求 ID，便于排查问题。
+- `GET /health` 返回运行时状态，可直接用于 Kubernetes Readiness/Liveness 探针。【F:src/server.ts†L129-L198】
+
+---
+
+## 🧠 WebSocket CDP 代理
+
+可通过内置的 WebSocket 代理直接连接 Puppeteer/Playwright：
+
+```javascript
+const browser = await puppeteer.connect({
+  browserWSEndpoint: 'ws://localhost:3001/ws'
+});
+```
+
+每个连接都会分配隔离的 Chromium 实例，启动参数与 REST API 保持一致，保证自动化行为统一。【F:src/api/websocket/proxy.route.ts†L1-L118】
 
 ---
 
 ## 📖 文档
 
-- [API 文档](./backend/README.md) - 完整 API 参考
-- [Docker 部署指南](./backend/docs/DOCKER_README.md) - 生产环境部署
-- [凭据管理指南](./backend/docs/CREDENTIALS_GUIDE.md) - 认证设置
-- [API 示例](./backend/docs/) - 代码示例和教程
+- [API 文档](./docs/) - 完整 API 参考
+- [Docker 部署指南](./docs/DOCKER_README.md) - 生产环境部署
+- [凭据管理指南](./docs/CREDENTIALS_GUIDE.md) - 认证设置
+- [队列指南](./docs/QUEUE_README.md) - 异步任务最佳实践
 
 ---
 
@@ -395,7 +461,7 @@ MIT License - 可免费用于商业用途。
 - 🌐 **官网**：https://browser.autos
 - 📁 **GitHub**：https://github.com/browser-autos/browser-autos
 - 🐳 **Docker Hub**：https://hub.docker.com/r/browserautos/browser-autos
-- 📖 **API 文档**：[backend/README.md](./backend/README.md)
+- 📖 **API 文档**：[Docs 入口](./docs/)
 - 🐛 **问题反馈**：https://github.com/browser-autos/browser-autos/issues
 
 ---
