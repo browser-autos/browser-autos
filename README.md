@@ -154,9 +154,7 @@ Each connection provisions an isolated Chromium instance with the same launch ar
 
 ## 🏗️ Architecture
 
-```
-Your Code → REST/WebSocket → browser.autos → Chromium Pool → Web
-```
+![browser.autos architecture diagram](./assets/architecture.svg)
 
 **Simple. Scalable. Reliable.**
 
