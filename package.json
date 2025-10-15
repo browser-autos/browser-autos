@@ -1,6 +1,6 @@
 {
   "name": "browser-autos-api",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Browser automation CDP API service based on Chromium",
   "main": "dist/index.js",
   "scripts": {

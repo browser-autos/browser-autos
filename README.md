@@ -87,6 +87,7 @@ npm run dev
 | Session management | `GET /sessions` | ✅ inspect/close active sessions |
 | Queue management | `/queue/*` | ✅ submit + manage async jobs |
 | WebSocket CDP proxy | `ws://<host>/ws` | ✅ direct Puppeteer/Playwright tunnel |
+| **Live Debugger** | `GET /debug/live` | ✅ interactive browser playground |
 
 All endpoints are registered automatically when the server boots. The Swagger UI reflects the latest schemas directly from the Fastify route definitions, so you can try requests in the browser with either JWT Bearer tokens or API keys.【F:src/server.ts†L40-L140】【F:src/config/swagger.ts†L13-L95】【F:src/config/swagger.ts†L281-L310】
 
@@ -99,6 +100,7 @@ All endpoints are registered automatically when the server boots. The Swagger UI
 - 🕷️ **Web Scraper** - Price monitoring, content aggregation
 - 🧪 **Testing Platform** - E2E tests, CI/CD integration
 - 👀 **Monitoring System** - Change detection, uptime checks
+- 🎮 **Live Debugger** - Interactive browser playground, real-time debugging
 
 ---
 
@@ -148,6 +150,7 @@ Each connection provisions an isolated Chromium instance with the same launch ar
 - **[API Documentation](./docs/)** - Complete API reference
 - **[Docker Deployment](./docs/DOCKER_README.md)** - Production deployment guide
 - **[Credentials Guide](./docs/CREDENTIALS_GUIDE.md)** - Authentication setup
+- **[Live Debugger Guide](./docs/LIVE_DEBUGGER_GUIDE.md)** - Interactive browser playground
 - **[API Examples](./docs/)** - Code examples and tutorials
 
 ---

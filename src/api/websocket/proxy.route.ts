@@ -67,8 +67,22 @@ export async function registerProxyRoutes(server: FastifyInstance) {
         args: getChromeArgs(),
       });
 
-      const wsEndpoint = browser.wsEndpoint();
-      logger.info({ sessionId, wsEndpoint }, 'Chrome launched');
+      // 创建一个新页面并获取其 CDP 会话端点
+      const page = await browser.newPage();
+      const cdpSession = await page.target().createCDPSession();
+
+      // 获取浏览器的 WebSocket 调试 URL
+      const browserWSEndpoint = browser.wsEndpoint();
+
+      // 从浏览器端点获取页面的 WebSocket 端点
+      // 使用 browser.wsEndpoint() 并替换为页面的 targetId
+      // @ts-ignore - _targetId is internal but necessary for page-level CDP
+      const targetId = page.target()._targetId;
+
+      // 构造页面级别的 CDP WebSocket URL
+      const wsEndpoint = browserWSEndpoint.replace(/\/devtools\/browser\/[^/]+$/, `/devtools/page/${targetId}`);
+
+      logger.info({ sessionId, wsEndpoint, targetId }, 'Chrome launched with page target');
 
       // 保存会话以便后续清理
       activeSessions.set(sessionId, browser);

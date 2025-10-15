@@ -240,6 +240,10 @@ async function registerRoutes(server: FastifyInstance) {
   const { registerSessionRoutes } = await import('./api/rest/session.route');
   await registerSessionRoutes(server);
 
+  // 注册 Live Debugger
+  const { registerLiveDebuggerRoutes } = await import('./api/rest/live-debugger.route');
+  await registerLiveDebuggerRoutes(server);
+
   // 注册 WebSocket Proxy
   const { registerProxyRoutes } = await import('./api/websocket/proxy.route');
   await registerProxyRoutes(server);

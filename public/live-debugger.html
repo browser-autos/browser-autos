@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Browser.autos Live Debugger</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: #1e1e1e;
+      color: #d4d4d4;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 50px 1fr 200px;
+      height: 100vh;
+      gap: 1px;
+      background: #2d2d2d;
+    }
+
+    /* Header */
+    .header {
+      grid-column: 1 / -1;
+      background: #252526;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      border-bottom: 1px solid #3e3e42;
+    }
+
+    .header h1 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    /* Code Editor */
+    .editor-panel {
+      background: #1e1e1e;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid #3e3e42;
+    }
+
+    .panel-header {
+      background: #252526;
+      padding: 10px 15px;
+      font-size: 13px;
+      font-weight: 500;
+      border-bottom: 1px solid #3e3e42;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .code-editor {
+      flex: 1;
+      padding: 15px;
+      font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      background: #1e1e1e;
+      color: #d4d4d4;
+      border: none;
+      outline: none;
+      resize: none;
+      tab-size: 2;
+    }
+
+    /* Preview Panel */
+    .preview-panel {
+      background: #1e1e1e;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .preview-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #000;
+      position: relative;
+    }
+
+    #preview-canvas {
+      max-width: 100%;
+      max-height: 100%;
+      border: 1px solid #3e3e42;
+      cursor: pointer;
+    }
+
+    .preview-loading {
+      position: absolute;
+      color: #858585;
+      font-size: 14px;
+    }
+
+    /* Console Panel */
+    .console-panel {
+      grid-column: 1 / -1;
+      background: #1e1e1e;
+      display: flex;
+      flex-direction: column;
+      border-top: 1px solid #3e3e42;
+    }
+
+    .console-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px 15px;
+      font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .console-entry {
+      padding: 4px 0;
+      border-bottom: 1px solid #2d2d2d;
+    }
+
+    .console-entry.log {
+      color: #d4d4d4;
+    }
+
+    .console-entry.error {
+      color: #f48771;
+    }
+
+    .console-entry.warn {
+      color: #cca700;
+    }
+
+    .console-entry.info {
+      color: #75beff;
+    }
+
+    .console-entry .timestamp {
+      color: #858585;
+      font-size: 11px;
+      margin-right: 10px;
+    }
+
+    /* Buttons */
+    button {
+      background: #0e639c;
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: #1177bb;
+    }
+
+    button:active {
+      background: #0d5a8f;
+    }
+
+    button:disabled {
+      background: #3e3e42;
+      color: #858585;
+      cursor: not-allowed;
+    }
+
+    button.secondary {
+      background: #3e3e42;
+    }
+
+    button.secondary:hover {
+      background: #4e4e52;
+    }
+
+    button.danger {
+      background: #c5303b;
+    }
+
+    button.danger:hover {
+      background: #d64851;
+    }
+
+    /* Status Indicator */
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #858585;
+    }
+
+    .status-dot.connected {
+      background: #73c991;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    .status-dot.error {
+      background: #f48771;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #1e1e1e;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #424242;
+      border-radius: 5px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #4e4e4e;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <h1>🚀 Browser.autos Live Debugger</h1>
+      <div class="header-actions">
+        <div class="status">
+          <span class="status-dot" id="status-dot"></span>
+          <span id="status-text">Disconnected</span>
+        </div>
+        <button id="btn-connect">Connect</button>
+        <button id="btn-run" disabled>▶ Run</button>
+        <button class="secondary" id="btn-screenshot" disabled>📸 Screenshot</button>
+        <button class="danger" id="btn-clear">Clear Console</button>
+      </div>
+    </div>
+
+    <!-- Code Editor -->
+    <div class="editor-panel">
+      <div class="panel-header">
+        <span>📝 Code Editor (Browser JavaScript)</span>
+        <span style="color: #858585; font-size: 11px;">Ctrl+Enter to run</span>
+      </div>
+      <textarea class="code-editor" id="code-editor" spellcheck="false">// 🚀 Browser JavaScript 自动化演示
+// 提示：这里运行的是浏览器端 JavaScript，不是 Puppeteer 代码
+// 可以使用所有 DOM API 和浏览器功能
+
+console.log('🌐 开始访问 Browser.autos 网站...');
+
+// 访问 Browser.autos 官网
+window.location.href = 'https://browser.autos';
+
+// 等待页面加载
+await new Promise(resolve => setTimeout(resolve, 2000));
+
+// 获取页面信息
+console.log('✅ 页面标题:', document.title);
+console.log('✅ 当前 URL:', window.location.href);
+
+// 查找页面中的关键元素
+const heading = document.querySelector('h1');
+if (heading) {
+  console.log('✅ 主标题:', heading.textContent);
+}
+
+// 查找所有链接
+const links = document.querySelectorAll('a');
+console.log(`✅ 页面包含 ${links.length} 个链接`);
+
+// 显示前 5 个链接
+links.forEach((link, index) => {
+  if (index < 5 && link.textContent.trim()) {
+    console.log(`  ${index + 1}. ${link.textContent.trim()}`);
+  }
+});
+
+console.log('🎉 自动化脚本执行完成！');
+</textarea>
+    </div>
+
+    <!-- Preview Panel -->
+    <div class="preview-panel">
+      <div class="panel-header">
+        <span>🖥️ Live Preview <span style="color: #858585; font-size: 10px;">(Click to interact, focus for keyboard)</span></span>
+        <span id="preview-resolution" style="color: #858585; font-size: 11px;">-</span>
+      </div>
+      <div class="preview-container">
+        <canvas id="preview-canvas"></canvas>
+        <div class="preview-loading" id="preview-loading">Click "Connect" to start live preview</div>
+      </div>
+    </div>
+
+    <!-- Console Panel -->
+    <div class="console-panel">
+      <div class="panel-header">
+        <span>💬 Console Output</span>
+      </div>
+      <div class="console-content" id="console-content">
+        <div class="console-entry info">
+          <span class="timestamp">00:00:00</span>
+          <span>Welcome to Browser.autos Live Debugger!</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Wait for DOM to load
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('🚀 Live Debugger initialized');
+      init();
+    });
+
+    // State
+    let ws = null;
+    let browser = null;
+    let page = null;
+    let isConnected = false;
+    let isRunning = false;
+
+    // Elements (will be initialized after DOM loads)
+    let btnConnect, btnRun, btnScreenshot, btnClear, codeEditor;
+    let consoleContent, statusDot, statusText;
+    let previewCanvas, previewLoading, previewResolution;
+    let ctx, img;
+
+    function init() {
+      try {
+        // Initialize elements
+        btnConnect = document.getElementById('btn-connect');
+        btnRun = document.getElementById('btn-run');
+        btnScreenshot = document.getElementById('btn-screenshot');
+        btnClear = document.getElementById('btn-clear');
+        codeEditor = document.getElementById('code-editor');
+        consoleContent = document.getElementById('console-content');
+        statusDot = document.getElementById('status-dot');
+        statusText = document.getElementById('status-text');
+        previewCanvas = document.getElementById('preview-canvas');
+        previewLoading = document.getElementById('preview-loading');
+        previewResolution = document.getElementById('preview-resolution');
+
+        // Check if all elements exist
+        if (!previewCanvas) {
+          console.error('❌ Canvas element not found!');
+          return;
+        }
+        if (!btnConnect) {
+          console.error('❌ Connect button not found!');
+          return;
+        }
+
+        // Canvas context
+        ctx = previewCanvas.getContext('2d');
+        img = new Image();
+
+      // Event listeners
+      btnConnect.addEventListener('click', connect);
+      btnRun.addEventListener('click', runCode);
+      btnScreenshot.addEventListener('click', takeScreenshot);
+      btnClear.addEventListener('click', clearConsole);
+
+      // Keyboard shortcuts
+      codeEditor.addEventListener('keydown', handleKeyDown);
+
+      // Canvas interaction events
+      previewCanvas.addEventListener('mousedown', handleCanvasMouseDown);
+      previewCanvas.addEventListener('mouseup', handleCanvasMouseUp);
+      previewCanvas.addEventListener('mousemove', handleCanvasMouseMove);
+      previewCanvas.addEventListener('wheel', handleCanvasWheel);
+      previewCanvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+      // Canvas keyboard events (when canvas has focus)
+      previewCanvas.tabIndex = 0; // Make canvas focusable
+      previewCanvas.addEventListener('keydown', handleCanvasKeyDown);
+      previewCanvas.addEventListener('keyup', handleCanvasKeyUp);
+
+      // Focus indicator
+      previewCanvas.addEventListener('focus', () => {
+        previewCanvas.style.outline = '2px solid #0e639c';
+        addConsole('🎯 Canvas focused - keyboard input enabled', 'info');
+      });
+      previewCanvas.addEventListener('blur', () => {
+        previewCanvas.style.outline = 'none';
+      });
+
+        // Initial message
+        addConsole('Ready to connect', 'info');
+      } catch (error) {
+        console.error('❌ Error in init():', error);
+        console.error('Stack:', error.stack);
+      }
+    }
+
+    // Utility: Add console entry
+    function addConsole(message, type = 'log') {
+      const entry = document.createElement('div');
+      entry.className = `console-entry ${type}`;
+
+      const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false });
+      entry.innerHTML = `<span class="timestamp">${timestamp}</span><span>${message}</span>`;
+
+      consoleContent.appendChild(entry);
+      consoleContent.scrollTop = consoleContent.scrollHeight;
+    }
+
+    // Utility: Update status
+    function updateStatus(connected) {
+      isConnected = connected;
+      statusDot.className = 'status-dot ' + (connected ? 'connected' : 'error');
+      statusText.textContent = connected ? 'Connected' : 'Disconnected';
+      btnConnect.textContent = connected ? 'Disconnect' : 'Connect';
+      btnRun.disabled = !connected;
+      btnScreenshot.disabled = !connected;
+    }
+
+    // Connect to WebSocket (CDP Proxy)
+    async function connect() {
+      if (isConnected) {
+        disconnect();
+        return;
+      }
+
+      try {
+        addConsole('Connecting to CDP WebSocket...', 'info');
+
+        // Connect to our WebSocket proxy at /ws
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/ws`;
+        addConsole(`Connecting to ${wsUrl}`, 'info');
+
+        ws = new WebSocket(wsUrl);
+
+        ws.onopen = () => {
+          addConsole('✅ WebSocket connected!', 'info');
+          updateStatus(true);
+          initCDP();
+        };
+
+        ws.onerror = (error) => {
+          addConsole('❌ WebSocket error', 'error');
+          addConsole('💡 Tip: Make sure the server is running', 'info');
+          updateStatus(false);
+        };
+
+        ws.onclose = (event) => {
+          const reason = event.reason || 'Connection closed';
+          const code = event.code;
+          addConsole(`WebSocket closed (code: ${code}, reason: ${reason})`, 'warn');
+
+          if (!event.wasClean) {
+            addConsole('⚠️ Connection closed unexpectedly', 'warn');
+          }
+
+          updateStatus(false);
+        };
+
+        ws.onmessage = handleCDPMessage;
+
+      } catch (error) {
+        addConsole('❌ Connection failed: ' + error.message, 'error');
+        updateStatus(false);
+      }
+    }
+
+    // Disconnect
+    function disconnect() {
+      if (ws) {
+        ws.close();
+        ws = null;
+      }
+      updateStatus(false);
+      previewLoading.textContent = 'Click "Connect" to start live preview';
+      previewLoading.style.display = 'block';
+    }
+
+    // Initialize CDP Screencast
+    let cdpId = 1;
+    function sendCDP(method, params = {}) {
+      if (!ws || ws.readyState !== WebSocket.OPEN) return;
+
+      const message = {
+        id: cdpId++,
+        method,
+        params
+      };
+
+      ws.send(JSON.stringify(message));
+      return message.id;
+    }
+
+    async function initCDP() {
+      addConsole('Starting live preview...', 'info');
+
+      // Enable Page domain first
+      sendCDP('Page.enable');
+
+      // Enable Runtime domain for console logs
+      sendCDP('Runtime.enable');
+
+      // Note: Input domain doesn't need explicit enable in most CDP versions
+      // Mouse and keyboard events work directly via Input.dispatchMouseEvent/KeyEvent
+
+      // Navigate to a blank page to initialize
+      sendCDP('Page.navigate', { url: 'about:blank' });
+
+      // Wait a bit for page to load, then start screencast
+      setTimeout(() => {
+        sendCDP('Page.startScreencast', {
+          format: 'jpeg',
+          quality: 80,
+          maxWidth: 1280,
+          maxHeight: 720
+        });
+        addConsole('📺 Screencast started (interactive mode enabled)', 'info');
+      }, 500);
+    }
+
+    // Handle CDP messages
+    function handleCDPMessage(event) {
+      try {
+        const message = JSON.parse(event.data);
+
+        // Debug: Log all CDP messages except screencast frames
+        if (message.method !== 'Page.screencastFrame') {
+          console.log('[CDP Message]:', message.method || 'response', message);
+        }
+
+        // Handle screencast frames
+        if (message.method === 'Page.screencastFrame') {
+          const { data, metadata, sessionId } = message.params;
+
+          // Acknowledge frame
+          sendCDP('Page.screencastFrameAck', { sessionId });
+
+          // Render frame to canvas
+          renderFrame(data, metadata);
+        }
+
+        // Handle console API calls
+        if (message.method === 'Runtime.consoleAPICalled') {
+          const { type, args } = message.params;
+          const text = args.map(arg => arg.value || arg.description || '').join(' ');
+          addConsole(`[Browser] ${text}`, type);
+        }
+
+        // Handle exceptions
+        if (message.method === 'Runtime.exceptionThrown') {
+          const { exceptionDetails } = message.params;
+          const errorText = exceptionDetails.text;
+
+          // Ignore "Execution context was destroyed" - this is normal during navigation
+          if (!errorText.includes('Execution context was destroyed')) {
+            addConsole(errorText, 'error');
+          }
+        }
+
+        // Handle CDP errors
+        if (message.error) {
+          const errorMsg = message.error.message;
+          console.error('CDP Error (ID ' + message.id + '):', errorMsg, message.error);
+
+          // Show error in console UI
+          addConsole(`❌ CDP Error (ID ${message.id}): ${errorMsg}`, 'error');
+        }
+
+        // Handle page navigation events
+        if (message.method === 'Page.frameNavigated') {
+          const url = message.params.frame.url;
+          if (url && url !== 'about:blank') {
+            addConsole(`📍 Navigated to: ${url}`, 'info');
+          }
+        }
+
+        // Handle page load events
+        if (message.method === 'Page.loadEventFired') {
+          addConsole('✅ Page loaded', 'info');
+        }
+
+      } catch (error) {
+        console.error('Failed to parse CDP message:', error);
+        addConsole('⚠️ Failed to parse message from browser', 'warn');
+      }
+    }
+
+    // Render screencast frame to canvas
+    function renderFrame(base64Data, metadata) {
+      previewLoading.style.display = 'none';
+
+      // Update metadata for coordinate conversion
+      updateScreencastMetadata(metadata);
+
+      img.onload = () => {
+        // Update canvas size to match image
+        if (previewCanvas.width !== img.width || previewCanvas.height !== img.height) {
+          previewCanvas.width = img.width;
+          previewCanvas.height = img.height;
+          previewResolution.textContent = `${img.width}×${img.height}`;
+        }
+
+        // Draw image to canvas
+        ctx.drawImage(img, 0, 0);
+      };
+
+      img.src = 'data:image/jpeg;base64,' + base64Data;
+    }
+
+    // CDP command responses
+    const cdpResponses = new Map();
+
+    // Run code
+    async function runCode() {
+      if (!isConnected || isRunning) return;
+
+      isRunning = true;
+      btnRun.disabled = true;
+      btnRun.textContent = '⏳ Running...';
+
+      const code = codeEditor.value;
+      addConsole('▶ Running code...', 'info');
+
+      try {
+        // Execute the wrapped code directly
+        const wrappedCode = `
+(async () => {
+  ${code}
+})().catch(err => {
+  console.error('❌ Execution error:', err.message);
+});
+`;
+
+        // Execute in the browser context
+        sendCDP('Runtime.evaluate', {
+          expression: wrappedCode,
+          awaitPromise: false,  // Don't wait for promise to avoid blocking
+          returnByValue: false,
+          userGesture: true
+        });
+
+        addConsole('✅ Code sent for execution', 'info');
+
+      } catch (error) {
+        addConsole('❌ Error: ' + error.message, 'error');
+      } finally {
+        // Reset button state after a short delay
+        setTimeout(() => {
+          isRunning = false;
+          btnRun.disabled = false;
+          btnRun.textContent = '▶ Run';
+        }, 500);
+      }
+    }
+
+    // Take screenshot
+    async function takeScreenshot() {
+      if (!isConnected) return;
+
+      try {
+        addConsole('📸 Taking screenshot...', 'info');
+
+        // Send CDP command to capture screenshot
+        const id = sendCDP('Page.captureScreenshot', {
+          format: 'png',
+          quality: 100
+        });
+
+        // Note: In production, you'd handle the response properly
+        // For now, this demonstrates the CDP command
+        addConsole('✅ Screenshot command sent (check backend logs)', 'info');
+
+      } catch (error) {
+        addConsole('❌ Screenshot failed: ' + error.message, 'error');
+      }
+    }
+
+    // Clear console
+    function clearConsole() {
+      consoleContent.innerHTML = '';
+      addConsole('Console cleared', 'info');
+    }
+
+    // Keyboard event handler
+    function handleKeyDown(e) {
+      // Ctrl+Enter to run
+      if (e.ctrlKey && e.key === 'Enter') {
+        e.preventDefault();
+        runCode();
+      }
+
+      // Tab to insert 2 spaces
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        const start = codeEditor.selectionStart;
+        const end = codeEditor.selectionEnd;
+        const value = codeEditor.value;
+        codeEditor.value = value.substring(0, start) + '  ' + value.substring(end);
+        codeEditor.selectionStart = codeEditor.selectionEnd = start + 2;
+      }
+    }
+
+    // ========== Canvas Interaction Functions ==========
+
+    // Store screencast metadata for coordinate conversion
+    let screencastMetadata = { width: 1280, height: 720, offsetTop: 0, pageScaleFactor: 1 };
+
+    // Convert canvas coordinates to page coordinates
+    function canvasToPageCoordinates(canvasX, canvasY) {
+      const rect = previewCanvas.getBoundingClientRect();
+      const scaleX = screencastMetadata.width / previewCanvas.width;
+      const scaleY = screencastMetadata.height / previewCanvas.height;
+
+      // Calculate relative position on canvas
+      const relX = (canvasX - rect.left) / rect.width;
+      const relY = (canvasY - rect.top) / rect.height;
+
+      // Convert to page coordinates
+      const pageX = relX * screencastMetadata.width;
+      const pageY = relY * screencastMetadata.height;
+
+      return { x: pageX, y: pageY };
+    }
+
+    // Mouse button mapping
+    const mouseButtons = {
+      0: 'left',
+      1: 'middle',
+      2: 'right'
+    };
+
+    // Handle mouse down
+    function handleCanvasMouseDown(e) {
+      if (!isConnected) {
+        addConsole('⚠️ 请先连接 WebSocket', 'warn');
+        return;
+      }
+      e.preventDefault();
+
+      // Focus canvas on click to enable keyboard input
+      focusCanvas();
+
+      const coords = canvasToPageCoordinates(e.clientX, e.clientY);
+      const button = mouseButtons[e.button] || 'left';
+
+      addConsole(`🖱️ 鼠标点击: (${Math.round(coords.x)}, ${Math.round(coords.y)}) 按钮:${button}`, 'info');
+
+      sendCDP('Input.dispatchMouseEvent', {
+        type: 'mousePressed',
+        x: coords.x,
+        y: coords.y,
+        button: button,
+        clickCount: e.detail || 1
+      });
+
+      // After click, handle special elements (inputs, links with target="_blank")
+      setTimeout(() => {
+        sendCDP('Runtime.evaluate', {
+          expression: `
+            (function() {
+              const el = document.elementFromPoint(${Math.round(coords.x)}, ${Math.round(coords.y)});
+              console.log('[DEBUG] Element at (${Math.round(coords.x)}, ${Math.round(coords.y)}):', el ? el.tagName + ' #' + (el.id || 'no-id') : 'null');
+
+              // Handle input elements - focus them
+              if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) {
+                el.focus();
+                console.log('[DEBUG] Focused:', el.tagName, '#' + (el.id || 'no-id'));
+                return true;
+              }
+
+              // Handle links with target="_blank" - navigate in current tab instead
+              if (el && el.tagName === 'A') {
+                const link = el.closest('a');
+                if (link && link.target === '_blank' && link.href) {
+                  console.log('[DEBUG] Detected target="_blank" link, navigating in current tab');
+                  console.log('[DEBUG] URL:', link.href);
+                  window.location.href = link.href;
+                  return true;
+                }
+              }
+
+              return false;
+            })()
+          `,
+          awaitPromise: false,
+          returnByValue: true
+        });
+      }, 100);
+    }
+
+    // Handle mouse up
+    function handleCanvasMouseUp(e) {
+      if (!isConnected) return;
+      e.preventDefault();
+
+      const coords = canvasToPageCoordinates(e.clientX, e.clientY);
+      const button = mouseButtons[e.button] || 'left';
+
+      sendCDP('Input.dispatchMouseEvent', {
+        type: 'mouseReleased',
+        x: coords.x,
+        y: coords.y,
+        button: button,
+        clickCount: 1
+      });
+    }
+
+    // Handle mouse move
+    function handleCanvasMouseMove(e) {
+      if (!isConnected) return;
+
+      const coords = canvasToPageCoordinates(e.clientX, e.clientY);
+
+      sendCDP('Input.dispatchMouseEvent', {
+        type: 'mouseMoved',
+        x: coords.x,
+        y: coords.y
+      });
+    }
+
+    // Handle mouse wheel (scroll)
+    function handleCanvasWheel(e) {
+      if (!isConnected) return;
+      e.preventDefault();
+
+      // Use Runtime.evaluate to scroll the page directly
+      // This is more reliable than Input.dispatchMouseEvent with mouseWheel
+      const scrollAmount = Math.round(e.deltaY);
+
+      addConsole(`🔄 滚动: ${scrollAmount > 0 ? '向下' : '向上'} ${Math.abs(scrollAmount)}px`, 'info');
+
+      sendCDP('Runtime.evaluate', {
+        expression: `window.scrollBy(0, ${scrollAmount})`,
+        awaitPromise: false,
+        returnByValue: false
+      });
+    }
+
+    // Update screencast metadata when frames arrive
+    function updateScreencastMetadata(metadata) {
+      if (metadata) {
+        screencastMetadata = {
+          width: metadata.deviceWidth || metadata.width || 1280,
+          height: metadata.deviceHeight || metadata.height || 720,
+          offsetTop: metadata.offsetTop || 0,
+          pageScaleFactor: metadata.pageScaleFactor || 1
+        };
+      }
+    }
+
+    // ========== Keyboard Input Functions ==========
+
+    // Key code mapping for special keys
+    const keyCodeMap = {
+      'Enter': 'Enter',
+      'Tab': 'Tab',
+      'Backspace': 'Backspace',
+      'Delete': 'Delete',
+      'Escape': 'Escape',
+      'ArrowUp': 'ArrowUp',
+      'ArrowDown': 'ArrowDown',
+      'ArrowLeft': 'ArrowLeft',
+      'ArrowRight': 'ArrowRight',
+      'Home': 'Home',
+      'End': 'End',
+      'PageUp': 'PageUp',
+      'PageDown': 'PageDown',
+      'Insert': 'Insert',
+      'F1': 'F1', 'F2': 'F2', 'F3': 'F3', 'F4': 'F4',
+      'F5': 'F5', 'F6': 'F6', 'F7': 'F7', 'F8': 'F8',
+      'F9': 'F9', 'F10': 'F10', 'F11': 'F11', 'F12': 'F12'
+    };
+
+    // Track keyboard input buffer for fallback text insertion
+    let keyboardBuffer = '';
+    let keyboardBufferTimeout = null;
+    let lastClickedInputElement = null;
+
+    // Handle keyboard down
+    function handleCanvasKeyDown(e) {
+      if (!isConnected) return;
+
+      // Don't prevent Ctrl+C, Ctrl+V, etc. in code editor
+      if (document.activeElement === codeEditor) return;
+
+      // Prevent default for most keys when canvas is focused
+      if (e.key !== 'F5' && e.key !== 'F12') {
+        e.preventDefault();
+      }
+
+      // Log keyboard input for visibility
+      const displayKey = e.key.length === 1 ? e.key : `[${e.key}]`;
+      addConsole(`⌨️ 键盘输入: ${displayKey}`, 'info');
+
+      const modifiers = getModifiers(e);
+
+      // For printable characters, use direct DOM manipulation (most reliable)
+      if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        // Buffer the character
+        keyboardBuffer += e.key;
+
+        // Clear existing timeout
+        if (keyboardBufferTimeout) {
+          clearTimeout(keyboardBufferTimeout);
+        }
+
+        // Insert text after a short delay (batch multiple keystrokes)
+        keyboardBufferTimeout = setTimeout(() => {
+          const textToInsert = keyboardBuffer;
+          keyboardBuffer = '';
+
+          // Use Runtime.evaluate to insert text, focusing element if needed
+          const escapedText = textToInsert.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n');
+          const coords = lastClickedInputElement || {x: 0, y: 0};
+
+          sendCDP('Runtime.evaluate', {
+            expression: `
+              (function() {
+                let activeEl = document.activeElement;
+
+                // If active element is not an input, try to find one at last click position
+                if (!activeEl || (activeEl.tagName !== 'INPUT' && activeEl.tagName !== 'TEXTAREA' && !activeEl.isContentEditable)) {
+                  // Try to find input/textarea elements
+                  const inputs = document.querySelectorAll('input, textarea, [contenteditable="true"]');
+                  if (inputs.length > 0) {
+                    activeEl = inputs[0]; // Use first input if no specific target
+                    activeEl.focus();
+                  }
+                }
+
+                if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable)) {
+                  if (activeEl.isContentEditable) {
+                    document.execCommand('insertText', false, '${escapedText}');
+                  } else {
+                    const start = activeEl.selectionStart || 0;
+                    const end = activeEl.selectionEnd || 0;
+                    const value = activeEl.value || '';
+                    activeEl.value = value.substring(0, start) + '${escapedText}' + value.substring(end);
+                    activeEl.selectionStart = activeEl.selectionEnd = start + ${textToInsert.length};
+                    activeEl.dispatchEvent(new Event('input', { bubbles: true }));
+                  }
+                  return true;
+                }
+                return false;
+              })()
+            `,
+            awaitPromise: false,
+            returnByValue: true
+          });
+        }, 10); // 10ms delay to batch keystrokes
+      } else {
+        // For special keys, send CDP events
+        sendCDP('Input.dispatchKeyEvent', {
+          type: 'keyDown',
+          key: e.key,
+          code: e.code,
+          windowsVirtualKeyCode: e.keyCode,
+          nativeVirtualKeyCode: e.keyCode,
+          text: e.key.length === 1 ? e.key : undefined,
+          unmodifiedText: e.key.length === 1 ? e.key : undefined,
+          ...modifiers
+        });
+      }
+    }
+
+    // Handle keyboard up
+    function handleCanvasKeyUp(e) {
+      if (!isConnected) return;
+      if (document.activeElement === codeEditor) return;
+
+      e.preventDefault();
+
+      const modifiers = getModifiers(e);
+
+      sendCDP('Input.dispatchKeyEvent', {
+        type: 'keyUp',
+        key: e.key,
+        code: e.code,
+        windowsVirtualKeyCode: e.keyCode,
+        nativeVirtualKeyCode: e.keyCode,
+        ...modifiers
+      });
+    }
+
+    // Get modifier keys state
+    function getModifiers(e) {
+      let modifiers = 0;
+      if (e.altKey) modifiers |= 1;
+      if (e.ctrlKey) modifiers |= 2;
+      if (e.metaKey) modifiers |= 4;
+      if (e.shiftKey) modifiers |= 8;
+
+      return {
+        modifiers,
+        isKeypad: e.location === KeyboardEvent.DOM_KEY_LOCATION_NUMPAD,
+        autoRepeat: e.repeat
+      };
+    }
+
+    // Focus canvas when clicking on it
+    function focusCanvas() {
+      if (isConnected && previewCanvas) {
+        previewCanvas.focus();
+      }
+    }
+  </script>
+</body>
+</html>
