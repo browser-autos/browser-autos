@@ -141,6 +141,9 @@ COPY --from=builder --chown=browserautos:browserautos /build/dist ./dist
 COPY --from=builder --chown=browserautos:browserautos /build/node_modules ./node_modules
 COPY --from=builder --chown=browserautos:browserautos /build/package*.json ./
 
+# 复制静态文件（Live Debugger HTML 等）
+COPY --chown=browserautos:browserautos public ./public
+
 # 安装 Playwright Chromium 浏览器
 # 系统依赖已作为 root 安装，这里只安装浏览器二进制文件
 USER browserautos

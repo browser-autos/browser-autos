@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.3] - 2025-10-15
+
+### 🐛 Bug Fixes
+
+#### Fixed
+- **Docker 镜像缺少 public/ 目录** (`docker/Dockerfile:144-145`)
+  - 问题：Live Debugger 端点在 Docker 部署中返回 404
+  - 原因：Dockerfile 未复制 `public/` 目录到镜像
+  - 解决：添加 `COPY public ./public` 到 Dockerfile
+  - 影响：Live Debugger HTML 文件现已包含在 Docker 镜像中
+
+### 📚 Documentation
+
+#### Added
+- `CONTRIBUTING.md` - 完整的贡献指南
+  - 开发设置说明（本地 + Dev Container）
+  - 代码规范和测试要求
+  - Pull Request 流程
+  - 发布流程说明
+
+---
+
 ## [1.0.2] - 2025-10-13
 
 ### ✨ Features
